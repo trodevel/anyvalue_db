@@ -19,10 +19,20 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11775 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11799 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
+
+#include "anyvalue/op_less.h"       // operator<
+
+namespace std
+{
+inline bool operator<( anyvalue::Value const & lhs, anyvalue::Value const & rhs )
+{
+    return ::operator<( lhs, rhs );
+}
+}
 
 #include <mutex>            // std::mutex
 #include <map>              // std::map
@@ -31,12 +41,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "record.h"         // Record
 #include "status.h"         // Status
 
+#include "i_table.h"        // ITable
+
 #include "anyvalue/operations.h"    // anyvalue::comparison_type_e
 
 namespace anyvalue_db
 {
 
-class Table
+class Table: public ITable
 {
     friend class Serializer;
 
@@ -64,6 +76,10 @@ public:
 
     bool delete_record__unlocked( field_id_t field_id, const Value & value );
 
+    bool on_add_field( field_id_t field_id, const Value & value, Record * record ) override;
+    bool on_update_field( field_id_t field_id, const Value & old_value, const Value & new_value, Record * record ) override;
+    void on_delete_field( field_id_t field_id, const Value & value ) override;
+
     Record* find__unlocked( field_id_t field_id, const Value & value );
     const Record* find__unlocked( field_id_t field_id, const Value & value ) const;
 
@@ -81,9 +97,6 @@ private:
 
 private:
 
-    void cleanup_index_for_record( Record * record );
-    void cleanup_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map );
-
     bool save_intern( std::string * error_msg, const std::string & filename ) const;
     bool load_intern( const std::string & filename );
 
@@ -95,6 +108,15 @@ private:
     bool add_record__unlocked(
             Record              * record,
             std::string         * error_msg );
+
+    void cleanup_index_for_record( Record * record );
+    void cleanup_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map );
+
+    bool validate_keys_of_new_record( const Record & record, std::string * error_msg ) const;
+    bool validate_keys_of_new_record_field( const Record & record, field_id_t field_id, const MapValueIdToRecord & map, std::string * error_msg ) const;
+
+    void add_index_for_record( Record * record );
+    void add_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map );
 
 private:
     mutable std::mutex          mutex_;

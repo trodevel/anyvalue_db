@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11768 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11783 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__RECORD_H
 #define ANYVALUE_DB__RECORD_H
@@ -41,6 +41,8 @@ struct Record
 
     ~Record();
 
+    void set_parent( ITable * parent );
+
     bool has_field( field_id_t field_id ) const;
     bool get_field( field_id_t field_id, Value * res ) const;
     const Value & get_field( field_id_t field_id ) const;
@@ -51,7 +53,6 @@ struct Record
 private:
 
     Record(); // for serializer
-    void set_parent( ITable * parent ); // for serializer
 
 private:
 

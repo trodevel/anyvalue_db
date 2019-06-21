@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11775 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11795 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -32,6 +32,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "anyvalue/value_operations.h"  // anyvalue::compare_values
 #include "anyvalue/str_helper.h"        // anyvalue::StrHelper
 
+#include "str_helper.h"                 // StrHelper
 #include "serializer.h"                 // serializer::load
 
 #define MODULENAME      "Table"
@@ -69,6 +70,48 @@ bool Table::init(
     return init_index( keys );
 }
 
+bool Table::add_record(
+        Record              * record,
+        std::string         * error_msg )
+{
+    MUTEX_SCOPE_LOCK( mutex_ );
+
+    return add_record__unlocked( record, error_msg );
+}
+
+bool Table::add_record__unlocked(
+        Record              * record,
+        std::string         * error_msg )
+{
+    std::string error_msg_2;
+
+    if( validate_keys_of_new_record( * record, & error_msg_2 ) == false )
+    {
+        dummy_log_error( MODULENAME, "add_record__unlocked: key validation failure %s", error_msg_2.c_str() );
+
+        * error_msg = "key validation failure " + error_msg_2;
+
+        return false;
+    }
+
+    auto b = records_.insert( record ).second;
+
+    if( b == false )
+    {
+        dummy_log_error( MODULENAME, "add_record__unlocked: record %p already exists", record );
+
+        * error_msg = "record already exists";
+
+        return false;
+    }
+
+    add_index_for_record( record );
+
+    record->set_parent( this );
+
+    return true;
+}
+
 Record* Table::create_record__unlocked(
         std::string         * error_msg )
 {
@@ -90,7 +133,7 @@ bool Table::delete_record__unlocked(
     auto it = records_.find( record );
     if( it == records_.end() )
     {
-        * error_msg   = "record " + std::to_string( (unsigned)record ) + " not found";
+        * error_msg   = "record " + std::to_string( reinterpret_cast<std::uintptr_t>( record ) ) + " not found";
         dummy_log_error( MODULENAME, "delete_record__unlocked: record %p not found", record );
         return false;
     }
@@ -105,6 +148,71 @@ bool Table::delete_record__unlocked(
 
     return true;
 }
+
+bool Table::on_add_field( field_id_t field_id, const Value & value, Record * record )
+{
+    auto it = map_field_id_to_index_.find( field_id );
+
+    if( it == map_field_id_to_index_.end() )
+        return true;
+
+    auto & map = it->second;
+
+    auto it_2 = map.find( value );
+
+    if( it_2 != map.end() )
+        return false;       // value already exists, not possible to insert it again as it will destroy index
+
+    auto b = map.insert( std::make_pair( value, record ) ).second;
+
+    assert( b );
+
+    return true;
+}
+
+bool Table::on_update_field( field_id_t field_id, const Value & old_value, const Value & new_value, Record * record )
+{
+    auto it = map_field_id_to_index_.find( field_id );
+
+    if( it == map_field_id_to_index_.end() )
+        return true;
+
+    auto & map = it->second;
+
+    auto it_2 = map.find( old_value );
+
+    assert( it_2 != map.end() );    // old value must exist
+
+    auto it_3 = map.find( new_value );
+
+    if( it_3 != map.end() )
+        return false;       // new value already exists, not possible to insert it again as it will destroy index
+
+    map.erase( it_2 );
+
+    auto b = map.insert( std::make_pair( new_value, record ) ).second;
+
+    assert( b );
+
+    return true;
+}
+
+void Table::on_delete_field( field_id_t field_id, const Value & value )
+{
+    auto it = map_field_id_to_index_.find( field_id );
+
+    if( it == map_field_id_to_index_.end() )
+        return;
+
+    auto & map = it->second;
+
+    auto it_2 = map.find( value );
+
+    assert( it_2 != map.end() );    // value must exist
+
+    map.erase( it_2 );
+}
+
 
 void Table::cleanup_index_for_record( Record * record )
 {
@@ -132,6 +240,62 @@ void Table::cleanup_index_for_record_field( Record * record, field_id_t field_id
     map.erase( it );
 
     dummy_log_debug( MODULENAME, "cleanup_index_for_record_field: record %p, field_id %u, value %s - OK", record, field_id, anyvalue::StrHelper::to_string( v ).c_str() );
+}
+
+void Table::add_index_for_record( Record * record )
+{
+    for( auto & e : map_field_id_to_index_ )
+    {
+        add_index_for_record_field( record, e.first, e.second );
+    }
+}
+
+void Table::add_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map )
+{
+    Value v;
+
+    if( record->get_field( field_id, & v ) == false )
+        return;
+
+    auto b = map.insert( std::make_pair( v, record ) ).second;
+
+    if( b == false )
+    {
+        dummy_log_error( MODULENAME, "add_index_for_record_field: record %p, field_id %u, duplicate value %s", record, field_id, anyvalue::StrHelper::to_string( v ).c_str() );
+        return;
+    }
+
+    dummy_log_debug( MODULENAME, "add_index_for_record_field: record %p, field_id %u, value %s - OK", record, field_id, anyvalue::StrHelper::to_string( v ).c_str() );
+}
+
+bool Table::validate_keys_of_new_record( const Record & record, std::string * error_msg ) const
+{
+    for( auto & e : map_field_id_to_index_ )
+    {
+        if( validate_keys_of_new_record_field( record, e.first, e.second, error_msg ) == false )
+            return false;
+    }
+
+    return true;
+}
+
+bool Table::validate_keys_of_new_record_field( const Record & record, field_id_t field_id, const MapValueIdToRecord & map, std::string * error_msg ) const
+{
+    Value v;
+
+    if( record.get_field( field_id, & v ) == false )
+        return true;
+
+    auto it = map.find( v );
+
+    if( it != map.end() )
+    {
+        * error_msg = "field id " + std::to_string( field_id ) + ", value " + anyvalue::StrHelper::to_string( v ) + " already exists";
+
+        return false;
+    }
+
+    return true;
 }
 
 Record* Table::find__unlocked( field_id_t field_id, const Value & value )
@@ -231,7 +395,7 @@ bool Table::load_intern( const std::string & filename )
         return false;
     }
 
-    dummy_log_info( MODULENAME, "load_intern: loaded %d entries from %s, last id %u", map_id_to_user_.size(), filename.c_str(), status.last_id );
+    dummy_log_info( MODULENAME, "load_intern: loaded %d entries from %s, number of keys %u", records_.size(), filename.c_str(), map_field_id_to_index_.size() );
 
     return true;
 }
@@ -280,7 +444,7 @@ bool Table::save_intern( std::string * error_msg, const std::string & filename )
         return false;
     }
 
-    dummy_log_info( MODULENAME, "save: save %d entries into %s", map_id_to_user_.size(), filename.c_str() );
+    dummy_log_info( MODULENAME, "save: save %d entries into %s", records_.size(), filename.c_str() );
 
     return true;
 }
@@ -330,7 +494,7 @@ bool Table::init_from_status( std::string * error_msg, const Status & status )
 
         if( b == false )
         {
-            * error_msg = "cannot add record " + StrHelper::to_string( e ) + ": " + error_msg_2;
+            * error_msg = "cannot add record " + StrHelper::to_string( * e ) + ": " + error_msg_2;
 
             return false;
         }

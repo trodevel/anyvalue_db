@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11776 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11792 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #include "serializer.h"     // self
 
@@ -31,16 +31,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 namespace serializer
 {
-
-anyvalue_db::field_id_t * load( std::istream & is, anyvalue_db::field_id_t * e )
-{
-    return anyvalue_db::Serializer::load( is, e );
-}
-
-bool save( std::ostream & os, const anyvalue_db::field_id_t & e )
-{
-    return anyvalue_db::Serializer::save( os, e );
-}
 
 anyvalue_db::Record* load( std::istream & is, anyvalue_db::Record* e )
 {
@@ -141,7 +131,7 @@ Status* Serializer::load_1( std::istream & is, Status* res )
     if( res == nullptr )
         throw std::invalid_argument( "Serializer::load: res must not be null" );
 
-    if( serializer::load( is, & res->last_id ) == nullptr )
+    if( serializer::load( is, & res->index_field_ids ) == nullptr )
         return nullptr;
     if( serializer::load( is, & res->records ) == nullptr )
         return nullptr;
@@ -163,7 +153,7 @@ bool Serializer::save( std::ostream & os, const Status & e )
     if( b == false )
         return false;
 
-    b &= serializer::save( os, e.last_id );
+    b &= serializer::save( os, e.index_field_ids );
 
     b &= serializer::save<true>( os, e.records );
 

@@ -19,9 +19,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11768 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11788 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #include "record.h"     // self
+
+#include <cassert>
 
 namespace anyvalue_db
 {
@@ -38,6 +40,14 @@ Record::Record( ITable * parent ):
 
 Record::~Record()
 {
+}
+
+void Record::set_parent( ITable * parent )
+{
+    assert( parent != nullptr );
+    assert( parent_ == nullptr );
+
+    parent_ = parent;
 }
 
 bool Record::has_field( field_id_t field_id ) const
@@ -71,14 +81,19 @@ const Value & Record::get_field( field_id_t field_id ) const
 
 bool Record::add_field( field_id_t field_id, const Value & value )
 {
-    auto res = map_id_to_value_.insert( std::make_pair( field_id, value ) ).second;
+    if( map_id_to_value_.count( field_id ) > 0 )
+        return false;       // field already exists, cannot insert again
 
-    if( res )
-    {
-        parent_->on_add_field( field_id, value );
-    }
+    assert( parent_ );
 
-    return res;
+    if( parent_->on_add_field( field_id, value, this ) == false )   // key already exists
+        return false;
+
+    auto b = map_id_to_value_.insert( std::make_pair( field_id, value ) ).second;
+
+    assert( b );
+
+    return true;
 }
 
 bool Record::update_field( field_id_t field_id, const Value & value )
@@ -86,25 +101,30 @@ bool Record::update_field( field_id_t field_id, const Value & value )
     auto it = map_id_to_value_.find( field_id );
 
     if( it == map_id_to_value_.end() )
+        return false;       // field doesn't exist, cannot update non-existing field
+
+    assert( parent_ );
+
+    if( parent_->on_update_field( field_id, it->second, value, this ) == false )   // key already exists
         return false;
 
     it->second  = value;
-
-    parent_->on_update_field( field_id, value );
 
     return true;
 }
 
 bool Record::delete_field( field_id_t field_id )
 {
-    auto res = map_id_to_value_.erase( field_id ) > 0;
+    auto it = map_id_to_value_.find( field_id );
 
-    if( res )
-    {
-        parent_->on_delete_field( field_id );
-    }
+    if( it == map_id_to_value_.end() )
+        return false;       // field doesn't exist, cannot delete non-existing field
 
-    return res;
+    assert( parent_ );
+
+    parent_->on_delete_field( field_id, it->second );
+
+    return true;
 }
 
 } // namespace anyvalue_db

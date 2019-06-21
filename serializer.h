@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11776 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11792 $ $Date:: 2019-06-21 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__SERIALIZER_H
 #define ANYVALUE_DB__SERIALIZER_H
@@ -34,9 +34,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 namespace serializer
 {
-anyvalue_db::field_id_t * load( std::istream & is, anyvalue_db::field_id_t * e );
-bool save( std::ostream & os, const anyvalue_db::field_id_t & e );
-
 anyvalue_db::Record** load( std::istream & is, anyvalue_db::Record** e );
 bool save( std::ostream & os, const anyvalue_db::Record * e );
 }

@@ -1,6 +1,6 @@
 /*
 
-interface ITable.
+String Helper. Provides to_string() function.
 
 Copyright (C) 2019 Sergey Kolevatov
 
@@ -19,31 +19,24 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11801 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11778 $ $Date:: 2019-06-21 #$ $Author: serge $
 
-#ifndef ANYVALUE_DB__I_TABLE_H
-#define ANYVALUE_DB__I_TABLE_H
+#ifndef ANYVALUE_DB__STR_HELPER_H
+#define ANYVALUE_DB__STR_HELPER_H
 
-#include "types.h"  // field_id_t
-#include "value.h"  // Value
+#include <string>
+
+#include "record.h"     // Record
 
 namespace anyvalue_db
 {
 
-class Record;
-
-class ITable
+class StrHelper
 {
 public:
-
-    virtual ~ITable() {};
-
-    virtual bool on_add_field( field_id_t field_id, const Value & value, Record * record )      = 0;
-    virtual bool on_update_field( field_id_t field_id, const Value & old_value, const Value & new_value, Record * record )  = 0;
-    virtual void on_delete_field( field_id_t field_id, const Value & value )                    = 0;
+    static std::string to_string( const Record & l );
 };
 
 } // namespace anyvalue_db
 
-
-#endif // ANYVALUE_DB__I_TABLE_H
+#endif // ANYVALUE_DB__STR_HELPER_H
