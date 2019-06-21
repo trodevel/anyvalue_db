@@ -6,14 +6,16 @@
 
 #include "utils/mutex_helper.h"         // MUTEX_SCOPE_LOCK
 
-const int LOGIN         = 1;
-const int PASSWORD      = 2;
-const int LAST_NAME     = 3;
-const int FIRST_NAME    = 4;
-const int EMAIL         = 5;
-const int PHONE         = 6;
+const int ID            = 1;
+const int LOGIN         = 2;
+const int PASSWORD      = 3;
+const int LAST_NAME     = 4;
+const int FIRST_NAME    = 5;
+const int EMAIL         = 6;
+const int PHONE         = 7;
+const int REG_KEY       = 8;
 
-bool create_user_1( anyvalue_db::Table * table, std::string * error_msg )
+bool create_user_in_db_1( anyvalue_db::Table * table, std::string * error_msg )
 {
     auto & mutex = table->get_mutex();
 
@@ -34,7 +36,7 @@ bool create_user_1( anyvalue_db::Table * table, std::string * error_msg )
     return true;
 }
 
-bool create_user_2( anyvalue_db::Table * table, std::string * error_msg )
+bool create_user_in_db_2( anyvalue_db::Table * table, std::string * error_msg )
 {
     auto & mutex = table->get_mutex();
 
@@ -108,12 +110,14 @@ void test_5()
 {
     anyvalue_db::Table table;
 
+    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
+
     std::string error_msg;
 
-    create_user_1( & table, & error_msg );
-    create_user_2( & table, & error_msg );
+    create_user_in_db_1( & table, & error_msg );
+    create_user_in_db_2( & table, & error_msg );
 
-    auto b = table.save( & error_msg, "test.dat" );
+    auto b = table.save( & error_msg, "test_1.dat" );
 
     if( b )
     {
@@ -131,12 +135,13 @@ void test_6( const anyvalue_db::Table & table )
     std::string error_msg;
     table.save( & error_msg, "users_new.dat" );
 }
+#endif // XXX
 
 void test_7()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "users_new.dat" );
+    auto b = table.init( "test_1.dat" );
 
     if( b )
     {
@@ -148,6 +153,7 @@ void test_7()
     }
 }
 
+#ifdef XXX
 void test_8()
 {
     anyvalue_db::Table table;
@@ -188,7 +194,7 @@ int main( int argc, const char* argv[] )
 //    test_4( table );
     test_5();
 //    test_6( table );
-//    test_7();
+    test_7();
 //    test_8();
 
     return 0;
