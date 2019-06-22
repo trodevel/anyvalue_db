@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11799 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11809 $ $Date:: 2019-06-22 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -120,6 +120,8 @@ private:
 
 private:
     mutable std::mutex          mutex_;
+
+    bool                        is_inited_;
 
     // Config
     std::string                 credentials_file_;

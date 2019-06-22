@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11783 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11807 $ $Date:: 2019-06-22 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__RECORD_H
 #define ANYVALUE_DB__RECORD_H
@@ -37,6 +37,7 @@ struct Record
     friend class StrHelper;
     friend class Serializer;
 
+    Record(); // for serializer
     Record( ITable * parent );
 
     ~Record();
@@ -49,10 +50,6 @@ struct Record
     bool add_field( field_id_t field_id, const Value & value );
     bool update_field( field_id_t field_id, const Value & value );
     bool delete_field( field_id_t field_id );
-
-private:
-
-    Record(); // for serializer
 
 private:
 

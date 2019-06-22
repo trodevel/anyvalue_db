@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11788 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11811 $ $Date:: 2019-06-22 #$ $Author: serge $
 
 #include "record.h"     // self
 
@@ -84,10 +84,11 @@ bool Record::add_field( field_id_t field_id, const Value & value )
     if( map_id_to_value_.count( field_id ) > 0 )
         return false;       // field already exists, cannot insert again
 
-    assert( parent_ );
-
-    if( parent_->on_add_field( field_id, value, this ) == false )   // key already exists
-        return false;
+    if( parent_ )
+    {
+        if( parent_->on_add_field( field_id, value, this ) == false )   // key already exists
+            return false;
+    }
 
     auto b = map_id_to_value_.insert( std::make_pair( field_id, value ) ).second;
 
@@ -103,10 +104,11 @@ bool Record::update_field( field_id_t field_id, const Value & value )
     if( it == map_id_to_value_.end() )
         return false;       // field doesn't exist, cannot update non-existing field
 
-    assert( parent_ );
-
-    if( parent_->on_update_field( field_id, it->second, value, this ) == false )   // key already exists
-        return false;
+    if( parent_ )
+    {
+        if( parent_->on_update_field( field_id, it->second, value, this ) == false )   // key already exists
+            return false;
+    }
 
     it->second  = value;
 
@@ -120,9 +122,10 @@ bool Record::delete_field( field_id_t field_id )
     if( it == map_id_to_value_.end() )
         return false;       // field doesn't exist, cannot delete non-existing field
 
-    assert( parent_ );
-
-    parent_->on_delete_field( field_id, it->second );
+    if( parent_ )
+    {
+        parent_->on_delete_field( field_id, it->second );
+    }
 
     return true;
 }

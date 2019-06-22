@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11795 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11809 $ $Date:: 2019-06-22 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -40,7 +40,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace anyvalue_db
 {
 
-Table::Table()
+Table::Table():
+        is_inited_( false )
 {
 }
 
@@ -57,7 +58,12 @@ bool Table::init(
 {
     MUTEX_SCOPE_LOCK( mutex_ );
 
+    assert( is_inited_ == false );
+
     auto b = load_intern( filename );
+
+    if( b )
+        is_inited_  = true;
 
     return b;
 }
@@ -67,7 +73,14 @@ bool Table::init(
 {
     MUTEX_SCOPE_LOCK( mutex_ );
 
-    return init_index( keys );
+    assert( is_inited_ == false );
+
+    auto b = init_index( keys );
+
+    if( b )
+        is_inited_  = true;
+
+    return b;
 }
 
 bool Table::add_record(
@@ -75,6 +88,8 @@ bool Table::add_record(
         std::string         * error_msg )
 {
     MUTEX_SCOPE_LOCK( mutex_ );
+
+    assert( is_inited_ );
 
     return add_record__unlocked( record, error_msg );
 }
@@ -115,6 +130,8 @@ bool Table::add_record__unlocked(
 Record* Table::create_record__unlocked(
         std::string         * error_msg )
 {
+    assert( is_inited_ );
+
     auto res = new Record( this );
 
     auto b = records_.insert( res ).second;
@@ -130,6 +147,8 @@ bool Table::delete_record__unlocked(
         Record              * record,
         std::string         * error_msg )
 {
+    assert( is_inited_ );
+
     auto it = records_.find( record );
     if( it == records_.end() )
     {
@@ -300,6 +319,8 @@ bool Table::validate_keys_of_new_record_field( const Record & record, field_id_t
 
 Record* Table::find__unlocked( field_id_t field_id, const Value & value )
 {
+    assert( is_inited_ );
+
     auto it = map_field_id_to_index_.find( field_id );
 
     if( it == map_field_id_to_index_.end() )
@@ -321,6 +342,8 @@ Record* Table::find__unlocked( field_id_t field_id, const Value & value )
 
 const Record* Table::find__unlocked( field_id_t field_id, const Value & value ) const
 {
+    assert( is_inited_ );
+
     auto it = map_field_id_to_index_.find( field_id );
 
     if( it == map_field_id_to_index_.end() )
@@ -342,6 +365,8 @@ const Record* Table::find__unlocked( field_id_t field_id, const Value & value ) 
 
 std::vector<Record*> Table::select__unlocked( field_id_t field_id, anyvalue::comparison_type_e op, const Value & value ) const
 {
+    assert( is_inited_ );
+
     std::vector<Record*>  res;
 
     for( auto & e : records_ )
@@ -403,6 +428,8 @@ bool Table::load_intern( const std::string & filename )
 bool Table::save( std::string * error_msg, const std::string & filename ) const
 {
     MUTEX_SCOPE_LOCK( mutex_ );
+
+    assert( is_inited_ );
 
     auto temp_name  = filename + ".tmp";
 
