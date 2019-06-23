@@ -14,6 +14,7 @@ const int FIRST_NAME    = 5;
 const int EMAIL         = 6;
 const int PHONE         = 7;
 const int REG_KEY       = 8;
+const int TEST_FIELD    = 9;
 
 bool add_field_if_nonempty(
         anyvalue_db::Record     * record,
@@ -90,6 +91,11 @@ anyvalue_db::Record * create_record_2()
     return create_record( 2222, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "" );
 }
 
+anyvalue_db::Record * create_record_3()
+{
+    return create_record( 3333, "", "xxx", "Mustemann", "Max", "max.mustermann@yoyodyne.com", "+4930123456", "" );
+}
+
 bool create_user_in_db_1( anyvalue_db::Table * table, std::string * error_msg )
 {
     return create_user_in_db( table, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", error_msg );
@@ -98,6 +104,27 @@ bool create_user_in_db_1( anyvalue_db::Table * table, std::string * error_msg )
 bool create_user_in_db_2( anyvalue_db::Table * table, std::string * error_msg )
 {
     return create_user_in_db( table, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", error_msg );
+}
+
+void init_table_1( anyvalue_db::Table * table )
+{
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+
+    auto rec = create_record_1();
+
+    std::string error_msg;
+
+    table->add_record( rec, & error_msg );
+}
+
+void init_table_2( anyvalue_db::Table * table )
+{
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+
+    std::string error_msg;
+
+    table->add_record( create_record_1(), & error_msg );
+    table->add_record( create_record_2(), & error_msg );
 }
 
 void log_test(
@@ -140,6 +167,8 @@ void test_1()
 
     auto b = table.add_record( rec, & error_msg );
 
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
     log_test( "test_1", b, true, "record added", "cannot add record", error_msg );
 }
 
@@ -156,6 +185,8 @@ void test_2()
     auto b = table.add_record( rec, & error_msg );
 
     b = table.add_record( rec, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
     log_test( "test_2", b, false, "the same record was not added", "record was unexpectedly added", error_msg );
 }
@@ -181,25 +212,70 @@ void test_3()
 
         auto b = table.add_record( rec, & error_msg );
 
+        std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
         log_test( "test_3", b, true, "second record added", "cannot add record", error_msg );
     }
 }
 
-#ifdef XXX
-
-void test_3( anyvalue_db::Table & table )
+void test_4()
 {
-    auto u = table.find__unlocked( "testuser" );
+    anyvalue_db::Table table;
 
-    if( u )
-    {
-        std::cout << "OK: found user: " << anyvalue_db::StrHelper::to_string( * u ) << std::endl;
-    }
-    else
-    {
-        std::cout << "ERROR: cannot find user" << std::endl;
-    }
+    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+
+    auto rec = create_record_1();
+
+    std::string error_msg;
+
+    table.add_record( rec, & error_msg );
+
+    auto b = rec->add_field( TEST_FIELD, "test_field" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4", b, true, "added new field", "cannot add new field", error_msg );
 }
+
+void test_4_nok()
+{
+    anyvalue_db::Table table;
+
+    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+
+    auto rec = create_record_1();
+
+    std::string error_msg;
+
+    table.add_record( rec, & error_msg );
+
+    auto b = rec->add_field( ID, 3333 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_nok", b, false, "existing field cannot be added", "unexpectedly added an existing field", error_msg );
+}
+
+void test_4_nok_2()
+{
+    anyvalue_db::Table table;
+
+    init_table_1( & table );
+
+    auto rec = create_record_3();
+
+    std::string error_msg;
+
+    table.add_record( rec, & error_msg );
+
+    auto b = rec->add_field( LOGIN, "test" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_nok_2", b, false, "duplicate index field cannot be added", "unexpectedly added an duplicate index field", error_msg );
+}
+
+#ifdef XXX
 
 void test_4( anyvalue_db::Table & table )
 {
@@ -274,7 +350,9 @@ int main( int argc, const char* argv[] )
     test_1();
     test_2();
     test_3();
-//    test_4( table );
+    test_4();
+    test_4_nok();
+    test_4_nok_2();
     test_5();
 //    test_6( table );
     test_7();
