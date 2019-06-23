@@ -19,14 +19,17 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11778 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11815 $ $Date:: 2019-06-23 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__STR_HELPER_H
 #define ANYVALUE_DB__STR_HELPER_H
 
 #include <string>
+#include <sstream>              // std::ostringstream
+
 
 #include "record.h"     // Record
+#include "table.h"      // Table
 
 namespace anyvalue_db
 {
@@ -34,7 +37,20 @@ namespace anyvalue_db
 class StrHelper
 {
 public:
-    static std::string to_string( const Record & l );
+    static std::ostream & write( std::ostream & os, const Record & l );
+    static std::ostream & write( std::ostream & os, const Table & l );
+
+    template<class T>
+    static std::string to_string( const T & l )
+    {
+        std::ostringstream os;
+
+        write( os, l );
+
+        return os.str();
+    }
+
+
 };
 
 } // namespace anyvalue_db

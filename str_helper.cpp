@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11778 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11817 $ $Date:: 2019-06-23 #$ $Author: serge $
 
 #include "str_helper.h"             // self
 
@@ -32,16 +32,36 @@ namespace anyvalue_db
 
 #define TUPLE_VAL_STR(_x_)  _x_,#_x_
 
-std::string StrHelper::to_string( const Record & u )
+std::ostream & StrHelper::write( std::ostream & os, const Record & l )
 {
-    std::ostringstream os;
-
-    for( auto e : u.map_id_to_value_ )
+    for( auto e : l.map_id_to_value_ )
     {
         os << "key_" << e.first << " = " << anyvalue::StrHelper::to_string( e.second ) << " ";
     }
 
-    return os.str();
+    return os;
+}
+
+std::ostream & StrHelper::write( std::ostream & os, const Table & l )
+{
+    os << "index keys: ";
+    for( auto e : l.map_field_id_to_index_ )
+    {
+        os << e.first << " ";
+    }
+
+    os << "\n";
+
+    os << "records:" << "\n";
+
+    for( auto e : l.records_ )
+    {
+        write( os, * e );
+
+        os << "\n";
+    }
+
+    return os;
 }
 
 } // namespace anyvalue_db
