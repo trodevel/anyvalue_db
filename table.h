@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11809 $ $Date:: 2019-06-22 #$ $Author: serge $
+// $Revision: 11816 $ $Date:: 2019-06-23 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -51,6 +51,7 @@ namespace anyvalue_db
 class Table: public ITable
 {
     friend class Serializer;
+    friend class StrHelper;
 
 public:
 
