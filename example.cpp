@@ -146,7 +146,7 @@ void log_test(
         const std::string   & not_exp_msg,
         const std::string   & error_msg )
 {
-    std::cout << test_name << " - ";
+    std::cout << "log_test: "<< test_name << " - ";
 
     if( res == expected_res )
     {
@@ -229,7 +229,7 @@ void test_2()
     }
 }
 
-void test_3()
+void test_3_add()
 {
     anyvalue_db::Table table;
 
@@ -241,10 +241,10 @@ void test_3()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_3", b, true, "added new field", "cannot add new field", "" );
+    log_test( "test_3_add", b, true, "added new field", "cannot add new field", "" );
 }
 
-void test_3_nok()
+void test_3_add_nok()
 {
     anyvalue_db::Table table;
 
@@ -256,10 +256,10 @@ void test_3_nok()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_3_nok", b, false, "existing field cannot be added", "unexpectedly added an existing field", "" );
+    log_test( "test_3_add_nok", b, false, "existing field cannot be added", "unexpectedly added an existing field", "" );
 }
 
-void test_3_nok_2()
+void test_3_add_nok_2()
 {
     anyvalue_db::Table table;
 
@@ -275,10 +275,10 @@ void test_3_nok_2()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_3_nok_2", b, false, "duplicate index field cannot be added", "unexpectedly added an duplicate index field", error_msg );
+    log_test( "test_3_add_nok_2", b, false, "duplicate index field cannot be added", "unexpectedly added an duplicate index field", error_msg );
 }
 
-void test_4_ok_1()
+void test_4_modify_ok_1()
 {
     anyvalue_db::Table table;
 
@@ -290,10 +290,10 @@ void test_4_ok_1()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_4_ok_1", b, true, "modified existing field", "cannot modify existing field", "" );
+    log_test( "test_4_modify_ok_1", b, true, "modified existing field", "cannot modify existing field", "" );
 }
 
-void test_4_ok_2()
+void test_4_modify_ok_2()
 {
     anyvalue_db::Table table;
 
@@ -305,12 +305,158 @@ void test_4_ok_2()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_4_ok_2", b, true, "modified existing field", "cannot modify existing field", "" );
+    log_test( "test_4_modify_ok_2", b, true, "modified existing field", "cannot modify existing field", "" );
+}
+
+void test_4_modify_nok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_2( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->update_field( ID, 2222 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_modify_nok_1", b, false, "cannot modify existing field", "unexpectedly modified existing field", "" );
+}
+
+void test_4_modify_nok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_2( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->update_field( LOGIN, "test2" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_modify_nok_2", b, false, "cannot modify existing field", "unexpectedly modified existing field", "" );
+}
+
+void test_5_delete_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_2( & table );
+
+    auto rec = recs[0];
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( rec, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_ok_1", b, true, "delete existing record", "cannot delete existing record", error_msg );
+}
+
+void test_5_delete_ok_2()
+{
+    anyvalue_db::Table table;
+
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( ID, 2222, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_ok_2", b, true, "delete existing record", "cannot delete existing record", error_msg );
+}
+
+void test_5_delete_ok_3()
+{
+    anyvalue_db::Table table;
+
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( LOGIN, "test", & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_ok_3", b, true, "delete existing record", "cannot delete existing record", error_msg );
+}
+
+void test_5_delete_nok_1()
+{
+    anyvalue_db::Table table;
+
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( nullptr, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_nok_1", b, false, "cannot delete non-existing record", "unexpectedly deleted non-existing record", error_msg );
+}
+
+void test_5_delete_nok_2()
+{
+    anyvalue_db::Table table;
+
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( ID, 3333, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_nok_2", b, false, "cannot delete non-existing record", "unexpectedly deleted non-existing record", error_msg );
+}
+
+void test_5_delete_nok_3()
+{
+    anyvalue_db::Table table;
+
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::string error_msg;
+
+    auto b = table.delete_record__unlocked( LOGIN, "test3", & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_5_delete_nok_3", b, false, "cannot delete non-existing record", "unexpectedly deleted non-existing record", error_msg );
 }
 
 #ifdef XXX
 
-void test_3( anyvalue_db::Table & table )
+void test_3_add( anyvalue_db::Table & table )
 {
     auto u = table.find__unlocked( 2849000613 );
 
@@ -383,11 +529,19 @@ int main( int argc, const char* argv[] )
     test_1();
     test_1_nok();
     test_2();
-    test_3();
-    test_3_nok();
-    test_3_nok_2();
-    test_4_ok_1();
-    test_4_ok_2();
+    test_3_add();
+    test_3_add_nok();
+    test_3_add_nok_2();
+    test_4_modify_ok_1();
+    test_4_modify_ok_2();
+    test_4_modify_nok_1();
+    test_4_modify_nok_2();
+    test_5_delete_ok_1();
+    test_5_delete_ok_2();
+    test_5_delete_ok_3();
+    test_5_delete_nok_1();
+    test_5_delete_nok_2();
+    test_5_delete_nok_3();
     test_5();
 //    test_6( table );
     test_7();
