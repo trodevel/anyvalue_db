@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11816 $ $Date:: 2019-06-23 #$ $Author: serge $
+// $Revision: 11836 $ $Date:: 2019-07-08 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -75,7 +75,10 @@ public:
             Record              * record,
             std::string         * error_msg );
 
-    bool delete_record__unlocked( field_id_t field_id, const Value & value );
+    bool delete_record__unlocked(
+            field_id_t          field_id,
+            const Value         & value,
+            std::string         * error_msg );
 
     bool on_add_field( field_id_t field_id, const Value & value, Record * record ) override;
     bool on_update_field( field_id_t field_id, const Value & old_value, const Value & new_value, Record * record ) override;

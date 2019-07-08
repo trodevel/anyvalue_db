@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11809 $ $Date:: 2019-06-22 #$ $Author: serge $
+// $Revision: 11838 $ $Date:: 2019-07-08 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -166,6 +166,38 @@ bool Table::delete_record__unlocked(
     dummy_log_info( MODULENAME, "delete_record__unlocked: record %p deleted", record );
 
     return true;
+}
+
+bool Table::delete_record__unlocked(
+        field_id_t          field_id,
+        const Value         & value,
+        std::string         * error_msg )
+{
+    assert( is_inited_ );
+
+    auto rec = find__unlocked( field_id, value );
+
+    if( rec == nullptr )
+    {
+        dummy_log_debug( MODULENAME, "delete_record__unlocked: field id %u w/ value %s not found", field_id, anyvalue::StrHelper::to_string( value ).c_str() );
+
+        * error_msg = "field id " + std::to_string( field_id ) + " w/ value " + anyvalue::StrHelper::to_string( value ) + " not found";
+
+        return false;
+    }
+
+    auto b = delete_record__unlocked( rec, error_msg );
+
+    if( b )
+    {
+        dummy_log_info( MODULENAME, "delete_record__unlocked: delete - field id %u w/ value %s", field_id, anyvalue::StrHelper::to_string( value ).c_str() );
+    }
+    else
+    {
+        dummy_log_info( MODULENAME, "delete_record__unlocked: cannot delete record - field id %u w/ value %s", field_id, anyvalue::StrHelper::to_string( value ).c_str() );
+    }
+
+    return b;
 }
 
 bool Table::on_add_field( field_id_t field_id, const Value & value, Record * record )
