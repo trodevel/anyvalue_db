@@ -106,25 +106,36 @@ bool create_user_in_db_2( anyvalue_db::Table * table, std::string * error_msg )
     return create_user_in_db( table, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", error_msg );
 }
 
-void init_table_1( anyvalue_db::Table * table )
+std::vector<anyvalue_db::Record*> init_table_1( anyvalue_db::Table * table )
 {
-    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    std::vector<anyvalue_db::Record*> res;
 
-    auto rec = create_record_1();
+    res.push_back( create_record_1() );
+
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
 
     std::string error_msg;
 
-    table->add_record( rec, & error_msg );
+    table->add_record( res[ 0 ], & error_msg );
+
+    return res;
 }
 
-void init_table_2( anyvalue_db::Table * table )
+std::vector<anyvalue_db::Record*> init_table_2( anyvalue_db::Table * table )
 {
+    std::vector<anyvalue_db::Record*> res;
+
+    res.push_back( create_record_1() );
+    res.push_back( create_record_2() );
+
     table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
 
     std::string error_msg;
 
-    table->add_record( create_record_1(), & error_msg );
-    table->add_record( create_record_2(), & error_msg );
+    table->add_record( res[ 0 ], & error_msg );
+    table->add_record( res[ 1 ], & error_msg );
+
+    return res;
 }
 
 void log_test(
@@ -172,7 +183,7 @@ void test_1()
     log_test( "test_1", b, true, "record added", "cannot add record", error_msg );
 }
 
-void test_2()
+void test_1_nok()
 {
     anyvalue_db::Table table;
 
@@ -188,10 +199,10 @@ void test_2()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_2", b, false, "the same record was not added", "record was unexpectedly added", error_msg );
+    log_test( "test_1_nok", b, false, "the same record was not added", "record was unexpectedly added", error_msg );
 }
 
-void test_3()
+void test_2()
 {
     anyvalue_db::Table table;
 
@@ -214,49 +225,41 @@ void test_3()
 
         std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-        log_test( "test_3", b, true, "second record added", "cannot add record", error_msg );
+        log_test( "test_2", b, true, "second record added", "cannot add record", error_msg );
     }
 }
 
-void test_4()
+void test_3()
 {
     anyvalue_db::Table table;
 
-    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    auto recs = init_table_1( & table );
 
-    auto rec = create_record_1();
-
-    std::string error_msg;
-
-    table.add_record( rec, & error_msg );
+    auto rec = recs[0];
 
     auto b = rec->add_field( TEST_FIELD, "test_field" );
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_4", b, true, "added new field", "cannot add new field", error_msg );
+    log_test( "test_3", b, true, "added new field", "cannot add new field", "" );
 }
 
-void test_4_nok()
+void test_3_nok()
 {
     anyvalue_db::Table table;
 
-    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    auto recs = init_table_1( & table );
 
-    auto rec = create_record_1();
-
-    std::string error_msg;
-
-    table.add_record( rec, & error_msg );
+    auto rec = recs[0];
 
     auto b = rec->add_field( ID, 3333 );
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_4_nok", b, false, "existing field cannot be added", "unexpectedly added an existing field", error_msg );
+    log_test( "test_3_nok", b, false, "existing field cannot be added", "unexpectedly added an existing field", "" );
 }
 
-void test_4_nok_2()
+void test_3_nok_2()
 {
     anyvalue_db::Table table;
 
@@ -272,12 +275,42 @@ void test_4_nok_2()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_4_nok_2", b, false, "duplicate index field cannot be added", "unexpectedly added an duplicate index field", error_msg );
+    log_test( "test_3_nok_2", b, false, "duplicate index field cannot be added", "unexpectedly added an duplicate index field", error_msg );
+}
+
+void test_4_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_2( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->update_field( ID, 5555 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_ok_1", b, true, "modified existing field", "cannot modify existing field", "" );
+}
+
+void test_4_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_2( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->update_field( LOGIN, "new_login" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_4_ok_2", b, true, "modified existing field", "cannot modify existing field", "" );
 }
 
 #ifdef XXX
 
-void test_4( anyvalue_db::Table & table )
+void test_3( anyvalue_db::Table & table )
 {
     auto u = table.find__unlocked( 2849000613 );
 
@@ -348,11 +381,13 @@ void test_8()
 int main( int argc, const char* argv[] )
 {
     test_1();
+    test_1_nok();
     test_2();
     test_3();
-    test_4();
-    test_4_nok();
-    test_4_nok_2();
+    test_3_nok();
+    test_3_nok_2();
+    test_4_ok_1();
+    test_4_ok_2();
     test_5();
 //    test_6( table );
     test_7();
