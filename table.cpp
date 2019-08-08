@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11838 $ $Date:: 2019-07-08 #$ $Author: serge $
+// $Revision: 11851 $ $Date:: 2019-08-07 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -395,7 +395,70 @@ const Record* Table::find__unlocked( field_id_t field_id, const Value & value ) 
     return it2->second;
 }
 
+bool Table::is_matching( const Record & r, const SelectCondition & condition )
+{
+    Value v;
+
+    if( r.get_field( condition.field_id, & v ) )
+    {
+        if( anyvalue::compare_values( condition.op, v, condition.value ) )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Table::is_matching( const Record & r, bool is_or, const std::vector<SelectCondition> & conditions )
+{
+    bool has_found_one = false;
+
+    for( auto & c : conditions )
+    {
+        Value v;
+
+        if( r.get_field( c.field_id, & v ) == false )
+        {
+            if( is_or )
+                continue;
+            else
+                return false;
+        }
+
+        if( anyvalue::compare_values( c.op, v, c.value ) == false )
+        {
+            if( is_or )
+            {
+                continue;
+            }
+            else
+                return false;
+        }
+        else
+        {
+            if( is_or )
+                return true;
+
+            has_found_one   = true;
+        }
+    }
+
+    return has_found_one;
+}
+
 std::vector<Record*> Table::select__unlocked( field_id_t field_id, anyvalue::comparison_type_e op, const Value & value ) const
+{
+    SelectCondition condition;
+
+    condition.field_id  = field_id;
+    condition.op        = op;
+    condition.value     = value;
+
+    return select__unlocked( condition );
+}
+
+std::vector<Record*> Table::select__unlocked( const SelectCondition & condition ) const
 {
     assert( is_inited_ );
 
@@ -403,18 +466,27 @@ std::vector<Record*> Table::select__unlocked( field_id_t field_id, anyvalue::com
 
     for( auto & e : records_ )
     {
-        Value v;
-
-        if( e->get_field( field_id, & v ) )
-        {
-            if( anyvalue::compare_values( op, v, value ) )
-            {
-                res.push_back( e );
-            }
-        }
+        if( is_matching( * e, condition ) )
+            res.push_back( e );
     }
 
     return res;
+}
+
+std::vector<Record*> Table::select__unlocked( bool is_or, const std::vector<SelectCondition> & conditions ) const
+{
+    assert( is_inited_ );
+
+    std::vector<Record*>  res;
+
+    for( auto & e : records_ )
+    {
+        if( is_matching( * e, is_or, conditions ) )
+            res.push_back( e );
+    }
+
+    return res;
+
 }
 
 std::mutex & Table::get_mutex() const

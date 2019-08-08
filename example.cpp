@@ -15,6 +15,7 @@ const int EMAIL         = 6;
 const int PHONE         = 7;
 const int REG_KEY       = 8;
 const int TEST_FIELD    = 9;
+const int STATUS        = 10;
 
 bool add_field_if_nonempty(
         anyvalue_db::Record     * record,
@@ -27,6 +28,14 @@ bool add_field_if_nonempty(
     return record->add_field( field_id, anyvalue::Value( val ) );
 }
 
+bool add_field(
+        anyvalue_db::Record     * record,
+        anyvalue_db::field_id_t field_id,
+        int                     val )
+{
+    return record->add_field( field_id, anyvalue::Value( val ) );
+}
+
 anyvalue_db::Record * create_record(
              unsigned           id,
              const std::string  & login,
@@ -35,7 +44,8 @@ anyvalue_db::Record * create_record(
              const std::string  & first_name,
              const std::string  & email,
              const std::string  & phone,
-             const std::string  & reg_key )
+             const std::string  & reg_key,
+             int                status )
 {
     auto res = new anyvalue_db::Record();
 
@@ -48,6 +58,7 @@ anyvalue_db::Record * create_record(
     add_field_if_nonempty( res, EMAIL,          email );
     add_field_if_nonempty( res, PHONE,          phone );
     add_field_if_nonempty( res, REG_KEY,        reg_key );
+    add_field( res, STATUS,                     status );
 
     return res;
 }
@@ -83,17 +94,17 @@ bool create_user_in_db(
 
 anyvalue_db::Record * create_record_1()
 {
-    return create_record( 1111, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", "afafaf" );
+    return create_record( 1111, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", "afafaf", 2 );
 }
 
 anyvalue_db::Record * create_record_2()
 {
-    return create_record( 2222, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "" );
+    return create_record( 2222, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "", 1 );
 }
 
 anyvalue_db::Record * create_record_3()
 {
-    return create_record( 3333, "", "xxx", "Mustemann", "Max", "max.mustermann@yoyodyne.com", "+4930123456", "" );
+    return create_record( 3333, "", "xxx", "Mustemann", "Max", "max.mustermann@yoyodyne.com", "+4930123456", "", 0 );
 }
 
 bool create_user_in_db_1( anyvalue_db::Table * table, std::string * error_msg )
@@ -138,6 +149,25 @@ std::vector<anyvalue_db::Record*> init_table_2( anyvalue_db::Table * table )
     return res;
 }
 
+std::vector<anyvalue_db::Record*> init_table_3( anyvalue_db::Table * table )
+{
+    std::vector<anyvalue_db::Record*> res;
+
+    res.push_back( create_record_1() );
+    res.push_back( create_record_2() );
+    res.push_back( create_record_3() );
+
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+
+    std::string error_msg;
+
+    table->add_record( res[ 0 ], & error_msg );
+    table->add_record( res[ 1 ], & error_msg );
+    table->add_record( res[ 2 ], & error_msg );
+
+    return res;
+}
+
 void log_test(
         const std::string   & test_name,
         bool                res,
@@ -165,6 +195,17 @@ void log_test(
     std::cout << std::endl;
 }
 
+void dump_selection( const std::vector<anyvalue_db::Record*> & vec, const std::string & comment )
+{
+    std::cout << comment << ":" << "\n";
+
+    for( auto & e : vec )
+    {
+        std::cout << anyvalue_db::StrHelper::to_string( * e ) << "\n";
+    }
+
+    std::cout << "\n";
+}
 
 void test_1()
 {
@@ -489,13 +530,144 @@ void test_5()
     log_test( "test_5", b, true, "table was written", "cannot write file", error_msg );
 }
 
-#ifdef XXX
-void test_6( const anyvalue_db::Table & table )
+void test_6_select_ok_1()
 {
-    std::string error_msg;
-    table.save( & error_msg, "users_new.dat" );
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.select__unlocked( LOGIN, anyvalue::comparison_type_e::EQ, "test" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_6_select_ok_1" );
+
+    log_test( "test_6_select_ok_1", res.size() == 1, true, "correct result", "wrong result size", "" );
 }
-#endif // XXX
+
+void test_6_select_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.select__unlocked( LOGIN, anyvalue::comparison_type_e::NEQ, "test" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_6_select_ok_2" );
+
+    log_test( "test_6_select_ok_2", res.size() == 1, true, "correct result", "wrong result size", "" );
+}
+
+void test_7_select_multi_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::vector<anyvalue_db::Table::SelectCondition> conditions =
+    {
+            { LOGIN, anyvalue::comparison_type_e::EQ, "test"  },
+            { LOGIN, anyvalue::comparison_type_e::EQ, "test2" },
+    };
+
+    auto res = table.select__unlocked( true, conditions );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_7_select_multi_ok_1" );
+
+    log_test( "test_7_select_multi_ok_1", res.size() == 2, true, "correct result", "wrong result size", "" );
+}
+
+void test_7_select_multi_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::vector<anyvalue_db::Table::SelectCondition> conditions =
+    {
+            { LOGIN, anyvalue::comparison_type_e::EQ,   "test"  },
+            { STATUS, anyvalue::comparison_type_e::EQ,  2 },
+    };
+
+    auto res = table.select__unlocked( false, conditions );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_7_select_multi_ok_2" );
+
+    log_test( "test_7_select_multi_ok_2", res.size() == 1, true, "correct result", "wrong result size", "" );
+}
+
+void test_7_select_multi_ok_3()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::vector<anyvalue_db::Table::SelectCondition> conditions =
+    {
+            { ID, anyvalue::comparison_type_e::EQ,  1111  },
+            { ID, anyvalue::comparison_type_e::EQ,  2222  },
+            { ID, anyvalue::comparison_type_e::EQ,  3333  },
+    };
+
+    auto res = table.select__unlocked( true, conditions );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_7_select_multi_ok_3" );
+
+    log_test( "test_7_select_multi_ok_3", res.size() == 3, true, "correct result", "wrong result size", "" );
+}
+
+void test_7_select_multi_ok_4()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    std::vector<anyvalue_db::Table::SelectCondition> conditions =
+    {
+            { PASSWORD, anyvalue::comparison_type_e::EQ,  "xxx" },
+            { STATUS, anyvalue::comparison_type_e::NEQ,    1  },
+    };
+
+    auto res = table.select__unlocked( false, conditions );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    dump_selection( res, "test_7_select_multi_ok_4" );
+
+    log_test( "test_7_select_multi_ok_4", res.size() == 2, true, "correct result", "wrong result size", "" );
+}
 
 void test_7()
 {
@@ -543,7 +715,12 @@ int main( int argc, const char* argv[] )
     test_5_delete_nok_2();
     test_5_delete_nok_3();
     test_5();
-//    test_6( table );
+    test_6_select_ok_1();
+    test_6_select_ok_2();
+    test_7_select_multi_ok_1();
+    test_7_select_multi_ok_2();
+    test_7_select_multi_ok_3();
+    test_7_select_multi_ok_4();
     test_7();
 //    test_8();
 

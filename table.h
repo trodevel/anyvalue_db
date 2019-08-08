@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11836 $ $Date:: 2019-07-08 #$ $Author: serge $
+// $Revision: 11851 $ $Date:: 2019-08-07 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -52,6 +52,15 @@ class Table: public ITable
 {
     friend class Serializer;
     friend class StrHelper;
+
+public:
+
+    struct SelectCondition
+    {
+        field_id_t  field_id;
+        anyvalue::comparison_type_e op;
+        Value       value;
+    };
 
 public:
 
@@ -88,6 +97,9 @@ public:
     const Record* find__unlocked( field_id_t field_id, const Value & value ) const;
 
     std::vector<Record*> select__unlocked( field_id_t field_id, anyvalue::comparison_type_e op, const Value & value ) const;
+    std::vector<Record*> select__unlocked( const SelectCondition & condition ) const;
+
+    std::vector<Record*> select__unlocked( bool is_or, const std::vector<SelectCondition> & conditions ) const;
 
     bool save( std::string * error_msg, const std::string & filename ) const;
 
@@ -121,6 +133,9 @@ private:
 
     void add_index_for_record( Record * record );
     void add_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map );
+
+    static bool is_matching( const Record & r, const SelectCondition & condition );
+    static bool is_matching( const Record & r, bool is_or, const std::vector<SelectCondition> & conditions );
 
 private:
     mutable std::mutex          mutex_;
