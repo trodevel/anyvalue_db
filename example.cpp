@@ -71,6 +71,7 @@ bool create_user_in_db(
         const std::string   & first_name,
         const std::string   & email,
         const std::string   & phone,
+        const std::string   & reg_key,
         std::string         * error_msg )
 {
     auto & mutex = table->get_mutex();
@@ -88,6 +89,7 @@ bool create_user_in_db(
     res->add_field( FIRST_NAME,     first_name );
     res->add_field( EMAIL,          email );
     res->add_field( PHONE,          phone );
+    res->add_field( REG_KEY,        reg_key );
 
     return true;
 }
@@ -99,22 +101,22 @@ anyvalue_db::Record * create_record_1()
 
 anyvalue_db::Record * create_record_2()
 {
-    return create_record( 2222, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "", 1 );
+    return create_record( 2222, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "jhghjg", 1 );
 }
 
 anyvalue_db::Record * create_record_3()
 {
-    return create_record( 3333, "", "xxx", "Mustemann", "Max", "max.mustermann@yoyodyne.com", "+4930123456", "", 0 );
+    return create_record( 3333, "", "xxx", "Mustemann", "Max", "max.mustermann@yoyodyne.com", "+4930123456", "tyrtyr", 0 );
 }
 
 bool create_user_in_db_1( anyvalue_db::Table * table, std::string * error_msg )
 {
-    return create_user_in_db( table, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", error_msg );
+    return create_user_in_db( table, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", "uhghjg", error_msg );
 }
 
 bool create_user_in_db_2( anyvalue_db::Table * table, std::string * error_msg )
 {
-    return create_user_in_db( table, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", error_msg );
+    return create_user_in_db( table, "test2", "xxx", "Bowie", "Doris", "doris.bowie@yoyodyne.com", "+9876542310", "hjghjgg", error_msg );
 }
 
 std::vector<anyvalue_db::Record*> init_table_1( anyvalue_db::Table * table )
@@ -123,7 +125,7 @@ std::vector<anyvalue_db::Record*> init_table_1( anyvalue_db::Table * table )
 
     res.push_back( create_record_1() );
 
-    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
 
     std::string error_msg;
 
@@ -139,7 +141,7 @@ std::vector<anyvalue_db::Record*> init_table_2( anyvalue_db::Table * table )
     res.push_back( create_record_1() );
     res.push_back( create_record_2() );
 
-    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
 
     std::string error_msg;
 
@@ -157,7 +159,7 @@ std::vector<anyvalue_db::Record*> init_table_3( anyvalue_db::Table * table )
     res.push_back( create_record_2() );
     res.push_back( create_record_3() );
 
-    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN } ));
+    table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
 
     std::string error_msg;
 
@@ -495,39 +497,23 @@ void test_5_delete_nok_3()
     log_test( "test_5_delete_nok_3", b, false, "cannot delete non-existing record", "unexpectedly deleted non-existing record", error_msg );
 }
 
-#ifdef XXX
-
-void test_3_add( anyvalue_db::Table & table )
-{
-    auto u = table.find__unlocked( 2849000613 );
-
-    if( u )
-    {
-        std::cout << "OK: found user: " << anyvalue_db::StrHelper::to_string( * u ) << std::endl;
-    }
-    else
-    {
-        std::cout << "ERROR: cannot find user" << std::endl;
-    }
-}
-
-#endif
-
-
-void test_5()
+void test_5_delete_nok_4()
 {
     anyvalue_db::Table table;
 
-    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
+    init_table_2( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
 
     std::string error_msg;
 
-    create_user_in_db_1( & table, & error_msg );
-    create_user_in_db_2( & table, & error_msg );
+    auto b = table.delete_record__unlocked( PASSWORD, "xxx", & error_msg );
 
-    auto b = table.save( & error_msg, "test_1.dat" );
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_5", b, true, "table was written", "cannot write file", error_msg );
+    log_test( "test_5_delete_nok_4", b, false, "cannot delete non-existing record", "unexpectedly deleted non-existing record", error_msg );
 }
 
 void test_6_select_ok_1()
@@ -669,32 +655,220 @@ void test_7_select_multi_ok_4()
     log_test( "test_7_select_multi_ok_4", res.size() == 2, true, "correct result", "wrong result size", "" );
 }
 
-void test_7()
+void test_8_find_ok_1()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "test_1.dat" );
+    auto recs = init_table_3( & table );
 
-    log_test( "test_6", b, true, "table was loaded", "cannot load table", "" );
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( ID, 1111 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_ok_1", res != nullptr, true, "found record", "record not found", "" );
 }
 
-#ifdef XXX
-void test_8()
+void test_8_find_ok_2()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "table.duplicate_login.dat" );
+    auto recs = init_table_3( & table );
 
-    if( b )
-    {
-        std::cout << "ERROR: file w/ duplicate logins was unexpectedly loaded" << std::endl;
-    }
-    else
-    {
-        std::cout << "OK: file w/ duplicate logins was not loaded (as expected)" << std::endl;
-    }
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( LOGIN, "test" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_ok_2", res != nullptr, true, "found record", "record not found", "" );
 }
-#endif
+
+void test_8_find_ok_3()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( REG_KEY, "tyrtyr" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_ok_3", res != nullptr, true, "found record", "record not found", "" );
+}
+
+void test_8_find_nok_4()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( ID, 1234 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_nok_4", res == nullptr, true, "non-existing record not found", "unexpectedly found record", "" );
+}
+
+void test_8_find_nok_5()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( REG_KEY, "blabla" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_nok_5", res == nullptr, true, "non-existing record not found", "unexpectedly found record", "" );
+}
+
+void test_8_find_nok_6()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( STATUS, 0 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_nok_6", res == nullptr, true, "non-index key cannot be used with find()", "unexpectedly found record", "" );
+}
+
+void test_8_find_nok_7()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto res = table.find__unlocked( FIRST_NAME, "Max" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_8_find_nok_7", res == nullptr, true, "non-index key cannot be used with find()", "unexpectedly found record", "" );
+}
+
+void test_9_save_ok_1()
+{
+    anyvalue_db::Table table;
+
+    table.init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
+
+    std::string error_msg;
+
+    auto b = table.save( & error_msg, "test_9_empty.dat" );
+
+    log_test( "test_9_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
+}
+
+void test_9_save_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_3( & table );
+
+    std::string error_msg;
+
+    auto b = table.save( & error_msg, "test_9.dat" );
+
+    log_test( "test_9_save_ok_2", b, true, "table was written", "cannot write file", error_msg );
+}
+
+void test_10_load_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto b = table.init( "test_9_empty.dat" );
+
+    log_test( "test_10_load_ok_1", b, true, "table was loaded", "cannot load table", "" );
+}
+
+void test_10_load_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto b = table.init( "test_9.dat" );
+
+    log_test( "test_10_load_ok_2", b, true, "table was loaded", "cannot load table", "" );
+}
+
+void test_10_load_nok_3()
+{
+    anyvalue_db::Table table;
+
+    auto b = table.init( "blabla.dat" );
+
+    log_test( "test_10_load_nok_3", b, false, "non-existing table was not loaded", "unexpectedly load non-existing table", "" );
+}
+
+void test_11_load_modify_save_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto b = table.init( "test_9.dat" );
+
+    if( b == false )
+    {
+        log_test( "test_11_load_modify_save_ok_1", b, true, "table was loaded", "cannot load table", "" );
+        return;
+    }
+
+    std::cout << "ORIG:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    auto & mutex = table.get_mutex();
+
+    MUTEX_SCOPE_LOCK( mutex );
+
+    auto rec = table.find__unlocked( LOGIN, "test" );
+
+    if( rec == nullptr )
+    {
+        log_test( "test_11_load_modify_save_ok_1", rec != nullptr, true, "found record", "cannot find record", "" );
+        return;
+    }
+
+    b = rec->update_field( LOGIN, "new_login" );
+
+    if( b == false )
+    {
+        log_test( "test_11_load_modify_save_ok_1", b, true, "updated field", "cannot update field", "" );
+        return;
+    }
+
+    std::cout << "NEW:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    std::string error_msg;
+
+    b = table.save( & error_msg, "test_11.dat" );
+
+    log_test( "test_11_load_modify_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
+}
 
 int main( int argc, const char* argv[] )
 {
@@ -714,15 +888,26 @@ int main( int argc, const char* argv[] )
     test_5_delete_nok_1();
     test_5_delete_nok_2();
     test_5_delete_nok_3();
-    test_5();
+    test_5_delete_nok_4();
     test_6_select_ok_1();
     test_6_select_ok_2();
     test_7_select_multi_ok_1();
     test_7_select_multi_ok_2();
     test_7_select_multi_ok_3();
     test_7_select_multi_ok_4();
-    test_7();
-//    test_8();
+    test_8_find_ok_1();
+    test_8_find_ok_2();
+    test_8_find_ok_3();
+    test_8_find_nok_4();
+    test_8_find_nok_5();
+    test_8_find_nok_6();
+    test_8_find_nok_7();
+    test_9_save_ok_1();
+    test_9_save_ok_2();
+    test_10_load_ok_1();
+    test_10_load_ok_2();
+    test_10_load_nok_3();
+    test_11_load_modify_save_ok_1();
 
     return 0;
 }
