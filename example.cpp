@@ -841,24 +841,26 @@ void test_11_load_modify_save_ok_1()
 
     std::cout << "ORIG:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    auto & mutex = table.get_mutex();
-
-    MUTEX_SCOPE_LOCK( mutex );
-
-    auto rec = table.find__unlocked( LOGIN, "test" );
-
-    if( rec == nullptr )
     {
-        log_test( "test_11_load_modify_save_ok_1", rec != nullptr, true, "found record", "cannot find record", "" );
-        return;
-    }
+        auto & mutex = table.get_mutex();
 
-    b = rec->update_field( LOGIN, "new_login" );
+        MUTEX_SCOPE_LOCK( mutex );
 
-    if( b == false )
-    {
-        log_test( "test_11_load_modify_save_ok_1", b, true, "updated field", "cannot update field", "" );
-        return;
+        auto rec = table.find__unlocked( LOGIN, "test" );
+
+        if( rec == nullptr )
+        {
+            log_test( "test_11_load_modify_save_ok_1", rec != nullptr, true, "found record", "cannot find record", "" );
+            return;
+        }
+
+        b = rec->update_field( LOGIN, "new_login" );
+
+        if( b == false )
+        {
+            log_test( "test_11_load_modify_save_ok_1", b, true, "updated field", "cannot update field", "" );
+            return;
+        }
     }
 
     std::cout << "NEW:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
