@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11851 $ $Date:: 2019-08-07 #$ $Author: serge $
+// $Revision: 11913 $ $Date:: 2019-08-30 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -77,6 +77,10 @@ public:
             Record              * record,
             std::string         * error_msg );
 
+    bool add_record__unlocked(
+            Record              * record,
+            std::string         * error_msg );
+
     Record* create_record__unlocked(
             std::string         * error_msg );
 
@@ -120,10 +124,6 @@ private:
     bool init_index(
             const std::vector<field_id_t> & keys );
     bool init_from_status( std::string * error_msg, const Status & status );
-
-    bool add_record__unlocked(
-            Record              * record,
-            std::string         * error_msg );
 
     void cleanup_index_for_record( Record * record );
     void cleanup_index_for_record_field( Record * record, field_id_t field_id, MapValueIdToRecord & map );

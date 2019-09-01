@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11851 $ $Date:: 2019-08-07 #$ $Author: serge $
+// $Revision: 11914 $ $Date:: 2019-08-30 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -89,8 +89,6 @@ bool Table::add_record(
 {
     MUTEX_SCOPE_LOCK( mutex_ );
 
-    assert( is_inited_ );
-
     return add_record__unlocked( record, error_msg );
 }
 
@@ -98,6 +96,8 @@ bool Table::add_record__unlocked(
         Record              * record,
         std::string         * error_msg )
 {
+    assert( is_inited_ );
+
     std::string error_msg_2;
 
     if( validate_keys_of_new_record( * record, & error_msg_2 ) == false )
