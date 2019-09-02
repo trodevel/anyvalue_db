@@ -5,6 +5,7 @@
 #include "str_helper.h"         // StrHelper
 
 #include "utils/mutex_helper.h"         // MUTEX_SCOPE_LOCK
+#include "utils/log_test.h"             // log_test
 
 const int ID            = 1;
 const int LOGIN         = 2;
@@ -168,33 +169,6 @@ std::vector<anyvalue_db::Record*> init_table_3( anyvalue_db::Table * table )
     table->add_record( res[ 2 ], & error_msg );
 
     return res;
-}
-
-void log_test(
-        const std::string   & test_name,
-        bool                res,
-        bool                expected_res,
-        const std::string   & exp_msg,
-        const std::string   & not_exp_msg,
-        const std::string   & error_msg )
-{
-    std::cout << "log_test: "<< test_name << " - ";
-
-    if( res == expected_res )
-    {
-        std::cout << "OK: " << exp_msg;
-    }
-    else
-    {
-        std::cout << "ERROR: " << not_exp_msg;
-    }
-
-    if( ! error_msg.empty() )
-    {
-        std::cout << ": " << error_msg;
-    }
-
-    std::cout << std::endl;
 }
 
 void dump_selection( const std::vector<anyvalue_db::Record*> & vec, const std::string & comment )
