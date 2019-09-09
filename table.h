@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11913 $ $Date:: 2019-08-30 #$ $Author: serge $
+// $Revision: 11943 $ $Date:: 2019-09-09 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -116,6 +116,15 @@ private:
     typedef std::map<field_id_t,MapValueIdToRecord>     MapFieldIdToIndex;
 
 private:
+
+    bool add_loaded_record__unlocked(
+            Record              * record,
+            std::string         * error_msg );
+
+    bool add_record__unlocked__intern(
+            Record              * record,
+            std::string         * error_msg,
+            bool                is_loaded );
 
     bool save_intern( std::string * error_msg, const std::string & filename ) const;
     bool load_intern( const std::string & filename );

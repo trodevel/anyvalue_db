@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11914 $ $Date:: 2019-08-30 #$ $Author: serge $
+// $Revision: 11943 $ $Date:: 2019-09-09 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -96,7 +96,22 @@ bool Table::add_record__unlocked(
         Record              * record,
         std::string         * error_msg )
 {
-    assert( is_inited_ );
+    return add_record__unlocked__intern( record, error_msg, false );
+}
+
+bool Table::add_loaded_record__unlocked(
+        Record              * record,
+        std::string         * error_msg )
+{
+    return add_record__unlocked__intern( record, error_msg, true );
+}
+
+bool Table::add_record__unlocked__intern(
+        Record              * record,
+        std::string         * error_msg,
+        bool                is_loaded )
+{
+    assert( ( is_inited_ && is_loaded == false ) || ( is_inited_ == false && is_loaded ) );
 
     std::string error_msg_2;
 
@@ -621,7 +636,7 @@ bool Table::init_from_status( std::string * error_msg, const Status & status )
     {
         std::string error_msg_2;
 
-        auto b = add_record__unlocked( e, & error_msg_2 );
+        auto b = add_loaded_record__unlocked( e, & error_msg_2 );
 
         if( b == false )
         {
