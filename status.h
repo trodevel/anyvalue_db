@@ -19,12 +19,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11773 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11957 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__STATUS_H
 #define ANYVALUE_DB__STATUS_H
 
 #include <vector>           // std::vector
+#include <map>              // std::pair
 
 #include "record.h"         // Record
 
@@ -35,6 +36,7 @@ struct Status
 {
     std::vector<field_id_t> index_field_ids;
     std::vector<Record*>    records;
+    std::vector<std::pair<metakey_id_t,Value>>  metakeys;
 };
 
 } // namespace anyvalue_db

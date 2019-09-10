@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11792 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11959 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #include "serializer.h"     // self
 
@@ -121,7 +121,24 @@ field_id_t* Serializer::load( std::istream & is, field_id_t* e )
     return e;
 }
 
-bool Serializer::save( std::ostream & os, const field_id_t & e )
+//bool Serializer::save( std::ostream & os, const metakey_id_t & e )
+//{
+//    return serializer::save( os, static_cast<unsigned>( e ) );
+//}
+//
+//metakey_id_t* Serializer::load( std::istream & is, metakey_id_t* e )
+//{
+//    uint32_t    v;
+//
+//    if( serializer::load( is, & v ) == nullptr )
+//        return nullptr;
+//
+//    * e = static_cast<metakey_id_t>( v );
+//
+//    return e;
+//}
+
+bool Serializer::save( std::ostream & os, const metakey_id_t & e )
 {
     return serializer::save( os, static_cast<unsigned>( e ) );
 }
@@ -134,6 +151,8 @@ Status* Serializer::load_1( std::istream & is, Status* res )
     if( serializer::load( is, & res->index_field_ids ) == nullptr )
         return nullptr;
     if( serializer::load( is, & res->records ) == nullptr )
+        return nullptr;
+    if( serializer::load( is, & res->metakeys ) == nullptr )
         return nullptr;
 
     return res;
@@ -156,6 +175,8 @@ bool Serializer::save( std::ostream & os, const Status & e )
     b &= serializer::save( os, e.index_field_ids );
 
     b &= serializer::save<true>( os, e.records );
+
+    b &= serializer::save<true>( os, e.metakeys );
 
     return b;
 }

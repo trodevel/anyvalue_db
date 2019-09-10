@@ -3,6 +3,7 @@
 
 #include "table.h"              // Table
 #include "str_helper.h"         // StrHelper
+#include "anyvalue/str_helper.h"        // anyvalue::StrHelper
 
 #include "utils/mutex_helper.h"         // MUTEX_SCOPE_LOCK
 #include "utils/log_test.h"             // log_test
@@ -17,6 +18,9 @@ const int PHONE         = 7;
 const int REG_KEY       = 8;
 const int TEST_FIELD    = 9;
 const int STATUS        = 10;
+
+const int LAST_ID       = 777;
+const int CREATOR       = 888;
 
 bool add_field_if_nonempty(
         anyvalue_db::Record     * record,
@@ -846,6 +850,167 @@ void test_11_load_modify_save_ok_1()
     log_test( "test_11_load_modify_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
 }
 
+void test_12_set_metakey_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->add_field( TEST_FIELD, "test_field" );
+
+    table.set_meta_key__unlocked( LAST_ID, 123456 );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_12_set_metakey_ok_1", b, true, "added new field", "cannot add new field", "" );
+}
+
+void test_12_set_metakey_ok_2()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    auto b = rec->add_field( TEST_FIELD, "test_field" );
+
+    table.set_meta_key__unlocked( LAST_ID, 123456 );
+    table.set_meta_key__unlocked( CREATOR, "Mister Jones" );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_12_set_metakey_ok_2", b, true, "added new field", "cannot add new field", "" );
+}
+
+void test_13_get_metakey_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    rec->add_field( TEST_FIELD, "test_field" );
+
+    table.set_meta_key__unlocked( LAST_ID, 123456 );
+
+    anyvalue::Value val;
+
+    auto b = table.get_meta_key__unlocked( LAST_ID, & val );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_13_get_metakey_ok_1", b, true, "metakey was found", "cannot find metakey", anyvalue::StrHelper::to_string( val ) );
+}
+
+void test_13_get_metakey_nok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    rec->add_field( TEST_FIELD, "test_field" );
+
+    anyvalue::Value val;
+
+    auto b = table.get_meta_key__unlocked( LAST_ID, & val );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_13_get_metakey_nok_1", b, false, "metakey was not found", "metakey was unexpectedly found", anyvalue::StrHelper::to_string( val ) );
+}
+
+void test_14_delete_metakey_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    rec->add_field( TEST_FIELD, "test_field" );
+
+    table.set_meta_key__unlocked( LAST_ID, 123456 );
+
+    auto b = table.delete_meta_key__unlocked( LAST_ID );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_14_delete_metakey_ok_1", b, true, "deleted metakey", "cannot delete metakey", "" );
+}
+
+void test_14_delete_metakey_nok_1()
+{
+    anyvalue_db::Table table;
+
+    auto recs = init_table_1( & table );
+
+    auto rec = recs[0];
+
+    rec->add_field( TEST_FIELD, "test_field" );
+
+    anyvalue::Value val;
+
+    auto b = table.delete_meta_key__unlocked( LAST_ID );
+
+    std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    log_test( "test_14_delete_metakey_nok_1", b, false, "metakey was not deleted", "metakey was unexpectedly deleted", anyvalue::StrHelper::to_string( val ) );
+}
+
+void test_15_save_ok_1()
+{
+    anyvalue_db::Table table;
+
+    init_table_3( & table );
+
+    table.set_meta_key__unlocked( LAST_ID, 123456 );
+    table.set_meta_key__unlocked( CREATOR, "Mister Jones" );
+
+    std::string error_msg;
+
+    auto b = table.save( & error_msg, "test_15.dat" );
+
+    log_test( "test_15_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
+}
+
+void test_16_load_modify_save_ok_1()
+{
+    anyvalue_db::Table table;
+
+    auto b = table.init( "test_15.dat" );
+
+    if( b == false )
+    {
+        log_test( "test_16_load_modify_save_ok_1", b, true, "table was loaded", "cannot load table", "" );
+        return;
+    }
+
+    std::cout << "ORIG:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    {
+        auto & mutex = table.get_mutex();
+
+        MUTEX_SCOPE_LOCK( mutex );
+
+        table.delete_meta_key__unlocked( LAST_ID );
+        table.set_meta_key__unlocked( CREATOR, "Herr Müller" );
+    }
+
+    std::cout << "NEW:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+
+    std::string error_msg;
+
+    b = table.save( & error_msg, "test_16.dat" );
+
+    log_test( "test_16_load_modify_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
+}
+
 int main( int argc, const char* argv[] )
 {
     test_1();
@@ -884,6 +1049,14 @@ int main( int argc, const char* argv[] )
     test_10_load_ok_2();
     test_10_load_nok_3();
     test_11_load_modify_save_ok_1();
+    test_12_set_metakey_ok_1();
+    test_12_set_metakey_ok_2();
+    test_13_get_metakey_ok_1();
+    test_13_get_metakey_nok_1();
+    test_14_delete_metakey_ok_1();
+    test_14_delete_metakey_nok_1();
+    test_15_save_ok_1();
+    test_16_load_modify_save_ok_1();
 
     return 0;
 }

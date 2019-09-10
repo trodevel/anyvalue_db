@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11792 $ $Date:: 2019-06-21 #$ $Author: serge $
+// $Revision: 11959 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__SERIALIZER_H
 #define ANYVALUE_DB__SERIALIZER_H
@@ -53,6 +53,9 @@ public:
 
     static field_id_t* load( std::istream & is, field_id_t* e );
     static bool save( std::ostream & os, const field_id_t & e );
+
+//    static metakey_id_t* load( std::istream & is, metakey_id_t* e );
+//    static bool save( std::ostream & os, const metakey_id_t & e );
 
     static Status* load( std::istream & is, Status* e );
     static bool save( std::ostream & os, const Status & e );

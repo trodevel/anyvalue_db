@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11943 $ $Date:: 2019-09-09 #$ $Author: serge $
+// $Revision: 11973 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -213,6 +213,66 @@ bool Table::delete_record__unlocked(
     }
 
     return b;
+}
+
+void Table::set_meta_key(
+        metakey_id_t        metakey_id,
+        const Value         & value )
+{
+    MUTEX_SCOPE_LOCK( mutex_ );
+
+    set_meta_key__unlocked( metakey_id, value );
+}
+
+void Table::set_meta_key__unlocked(
+        metakey_id_t        metakey_id,
+        const Value         & value )
+{
+    map_metakey_id_to_value_[ metakey_id ]    = value;
+}
+
+bool Table::get_meta_key(
+        metakey_id_t        metakey_id,
+        Value               * value )
+{
+    MUTEX_SCOPE_LOCK( mutex_ );
+
+    return get_meta_key__unlocked( metakey_id, value );
+}
+
+bool Table::get_meta_key__unlocked(
+        metakey_id_t        metakey_id,
+        Value               * value )
+{
+    auto it = map_metakey_id_to_value_.find( metakey_id );
+
+    if( it == map_metakey_id_to_value_.end() )
+        return false;
+
+    * value = it->second;
+
+    return true;
+}
+
+bool Table::delete_meta_key(
+        metakey_id_t        metakey_id )
+{
+    MUTEX_SCOPE_LOCK( mutex_ );
+
+    return delete_meta_key__unlocked( metakey_id );
+}
+
+bool Table::delete_meta_key__unlocked(
+        metakey_id_t        metakey_id )
+{
+    auto it = map_metakey_id_to_value_.find( metakey_id );
+
+    if( it == map_metakey_id_to_value_.end() )
+        return false;
+
+    map_metakey_id_to_value_.erase( it );
+
+    return true;
 }
 
 bool Table::on_add_field( field_id_t field_id, const Value & value, Record * record )
@@ -590,7 +650,7 @@ bool Table::save_intern( std::string * error_msg, const std::string & filename )
         return false;
     }
 
-    dummy_log_info( MODULENAME, "save: save %d entries into %s", records_.size(), filename.c_str() );
+    dummy_log_info( MODULENAME, "save: saved %d entries, %d metakeys into %s", records_.size(), map_metakey_id_to_value_.size(), filename.c_str() );
 
     return true;
 }
@@ -605,6 +665,11 @@ void Table::get_status( Status * res ) const
     for( auto & e : records_ )
     {
         res->records.push_back( e );
+    }
+
+    for( auto & e : map_metakey_id_to_value_ )
+    {
+        res->metakeys.push_back( std::make_pair( e.first, e.second ) );
     }
 }
 
@@ -628,6 +693,14 @@ bool Table::init_index(
     return true;
 }
 
+void Table::init_metakeys_from_status( const Status & status )
+{
+    for( auto e : status.metakeys )
+    {
+        map_metakey_id_to_value_.insert( std::make_pair( e.first, e.second ) );
+    }
+}
+
 bool Table::init_from_status( std::string * error_msg, const Status & status )
 {
     init_index( status.index_field_ids );
@@ -645,6 +718,8 @@ bool Table::init_from_status( std::string * error_msg, const Status & status )
             return false;
         }
     }
+
+    init_metakeys_from_status( status );
 
     return true;
 }

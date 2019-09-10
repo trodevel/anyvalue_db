@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11767 $ $Date:: 2019-06-20 #$ $Author: serge $
+// $Revision: 11952 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #ifndef LIB_ANYVALUE_DB__TYPES_H
 #define LIB_ANYVALUE_DB__TYPES_H
@@ -30,6 +30,7 @@ namespace anyvalue_db
 {
 
 typedef uint32_t field_id_t;
+typedef uint32_t metakey_id_t;
 
 } // namespace anyvalue_db
 

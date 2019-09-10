@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11943 $ $Date:: 2019-09-09 #$ $Author: serge $
+// $Revision: 11973 $ $Date:: 2019-09-10 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -93,6 +93,28 @@ public:
             const Value         & value,
             std::string         * error_msg );
 
+    void set_meta_key(
+            metakey_id_t        metakey_id,
+            const Value         & value );
+
+    bool get_meta_key(
+            metakey_id_t        metakey_id,
+            Value               * value );
+
+    bool delete_meta_key(
+            metakey_id_t        metakey_id );
+
+    void set_meta_key__unlocked(
+            metakey_id_t        metakey_id,
+            const Value         & value );
+
+    bool get_meta_key__unlocked(
+            metakey_id_t        metakey_id,
+            Value               * value );
+
+    bool delete_meta_key__unlocked(
+            metakey_id_t        metakey_id );
+
     bool on_add_field( field_id_t field_id, const Value & value, Record * record ) override;
     bool on_update_field( field_id_t field_id, const Value & old_value, const Value & new_value, Record * record ) override;
     void on_delete_field( field_id_t field_id, const Value & value ) override;
@@ -115,6 +137,8 @@ private:
     typedef std::map<Value,Record*>     MapValueIdToRecord;
     typedef std::map<field_id_t,MapValueIdToRecord>     MapFieldIdToIndex;
 
+    typedef std::map<metakey_id_t,Value>     MapMetaKeyIdToValue;
+
 private:
 
     bool add_loaded_record__unlocked(
@@ -132,6 +156,7 @@ private:
     void get_status( Status * res ) const;
     bool init_index(
             const std::vector<field_id_t> & keys );
+    void init_metakeys_from_status( const Status & status );
     bool init_from_status( std::string * error_msg, const Status & status );
 
     void cleanup_index_for_record( Record * record );
@@ -156,6 +181,8 @@ private:
 
     SetRecord                   records_;
     MapFieldIdToIndex           map_field_id_to_index_;
+
+    MapMetaKeyIdToValue         map_metakey_id_to_value_;
 };
 
 } // namespace anyvalue_db
