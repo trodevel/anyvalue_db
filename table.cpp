@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11973 $ $Date:: 2019-09-10 #$ $Author: serge $
+// $Revision: 11995 $ $Date:: 2019-09-16 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -599,7 +599,7 @@ bool Table::load_intern( const std::string & filename )
         return false;
     }
 
-    dummy_log_info( MODULENAME, "load_intern: loaded %d entries from %s, number of keys %u", records_.size(), filename.c_str(), map_field_id_to_index_.size() );
+    dummy_log_info( MODULENAME, "load_intern: loaded %d entries from %s, number of keys %u, number of metakeys %u", records_.size(), filename.c_str(), map_field_id_to_index_.size(), map_metakey_id_to_value_.size() );
 
     return true;
 }
