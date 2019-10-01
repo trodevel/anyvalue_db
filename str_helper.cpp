@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 12081 $ $Date:: 2019-09-30 #$ $Author: serge $
+// $Revision: 12098 $ $Date:: 2019-10-01 #$ $Author: serge $
 
 #include "str_helper.h"             // self
 
@@ -77,7 +77,7 @@ std::ostream & StrHelper::write( std::ostream & os, const Table & l )
 
 std::ostream & StrHelper::write( std::ostream & os, const DB & l )
 {
-    os << "tables:" << "\n";
+    os << "tables (" << l.map_name_to_table_.size() << "):\n";
 
     for( auto e : l.map_name_to_table_ )
     {

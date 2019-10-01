@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 12075 $ $Date:: 2019-09-30 #$ $Author: serge $
+// $Revision: 12098 $ $Date:: 2019-10-01 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__SERIALIZER_H
 #define ANYVALUE_DB__SERIALIZER_H

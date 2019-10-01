@@ -238,7 +238,7 @@ void dump_selection( const std::vector<anyvalue_db::Record*> & vec, const std::s
     std::cout << "\n";
 }
 
-void test_1()
+void test_1_add_record_ok_1()
 {
     anyvalue_db::Table table;
 
@@ -252,10 +252,10 @@ void test_1()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_1", b, true, "record added", "cannot add record", error_msg );
+    log_test( "test_1_add_record_ok_1", b, true, "record added", "cannot add record", error_msg );
 }
 
-void test_1_nok()
+void test_1_add_record_nok_1()
 {
     anyvalue_db::Table table;
 
@@ -271,7 +271,7 @@ void test_1_nok()
 
     std::cout << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
-    log_test( "test_1_nok", b, false, "the same record was not added", "record was unexpectedly added", error_msg );
+    log_test( "test_1_add_record_nok_1", b, false, "the same record was not added", "record was unexpectedly added", error_msg );
 }
 
 void test_2()
@@ -1064,9 +1064,9 @@ void test_16_load_modify_save_ok_1()
 
 void test_20_add_table_ok_1()
 {
-    auto * table = new anyvalue_db::Table;
+    auto * users = new anyvalue_db::Table;
 
-    init_table_3( table );
+    init_table_3( users );
 
     anyvalue_db::DB db;
 
@@ -1074,7 +1074,7 @@ void test_20_add_table_ok_1()
 
     std::string error_msg;
 
-    auto b = db.add_table( "users", table, & error_msg );
+    auto b = db.add_table( "users", users, & error_msg );
 
     std::cout << anyvalue_db::StrHelper::to_string( db ) << "\n";
 
@@ -1083,9 +1083,9 @@ void test_20_add_table_ok_1()
 
 void test_20_add_table_ok_2()
 {
-    auto * table = new anyvalue_db::Table;
+    auto * users = new anyvalue_db::Table;
 
-    init_table_3( table );
+    init_table_3( users );
 
     auto * orders = new anyvalue_db::Table;
 
@@ -1097,7 +1097,7 @@ void test_20_add_table_ok_2()
 
     std::string error_msg;
 
-    auto b = db.add_table( "users", table, & error_msg );
+    auto b = db.add_table( "users", users, & error_msg );
     b &= db.add_table( "orders", orders, & error_msg );
 
     std::cout << anyvalue_db::StrHelper::to_string( db ) << "\n";
@@ -1105,10 +1105,184 @@ void test_20_add_table_ok_2()
     log_test( "test_20_add_table_ok_2", b, true, "table added", "cannot add table", error_msg );
 }
 
+void test_20_add_table_nok_1()
+{
+    auto * users = new anyvalue_db::Table;
+
+    init_table_3( users );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    db.add_table( "users", users, & error_msg );
+    auto b = db.add_table( "users", users, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( db ) << "\n";
+
+    log_test( "test_20_add_table_nok_1", b, false, "duplicate table was not added", "unexpectedly added duplicate table", error_msg );
+}
+
+void test_21_delete_table_ok_1()
+{
+    auto * users = new anyvalue_db::Table;
+
+    init_table_3( users );
+
+    auto * orders = new anyvalue_db::Table;
+
+    init_order_table_3( orders );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    db.add_table( "users", users, & error_msg );
+    db.add_table( "orders", orders, & error_msg );
+
+    std::cout << "OLD:" << "\n" << anyvalue_db::StrHelper::to_string( db ) << "\n";
+
+    auto b = db.delete_table__unlocked( "orders", & error_msg );
+
+    std::cout << "NEW:" << "\n" << anyvalue_db::StrHelper::to_string( db ) << "\n";
+
+    log_test( "test_21_delete_table_ok_1", b, true, "table deleted", "cannot delete table", error_msg );
+}
+
+void test_21_delete_table_nok_1()
+{
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    auto b = db.delete_table__unlocked( "orders", & error_msg );
+
+    log_test( "test_21_delete_table_nok_1", b, false, "non-existing table was not deleted", "unexpectedly deleted non-existing table", error_msg );
+}
+
+void test_22_find_table_ok_1()
+{
+    auto * users = new anyvalue_db::Table;
+
+    init_table_3( users );
+
+    auto * orders = new anyvalue_db::Table;
+
+    init_order_table_3( orders );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    db.add_table( "users", users, & error_msg );
+    db.add_table( "orders", orders, & error_msg );
+
+    auto t = db.find__unlocked( "users" );
+
+    log_test( "test_22_find_table_ok_1", t != nullptr, true, "table found", "cannot find table", "" );
+}
+
+void test_22_find_table_nok_1()
+{
+    anyvalue_db::DB db;
+
+    db.init();
+
+    auto t = db.find__unlocked( "users" );
+
+    log_test( "test_22_find_table_nok_1", t == nullptr, true, "non-existing table was not found", "unexpectedly found non-existing table", "" );
+}
+
+void test_23_save_table_ok_1()
+{
+    auto * users = new anyvalue_db::Table;
+
+    init_table_3( users );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    db.add_table( "users", users, & error_msg );
+
+    auto b = db.save( & error_msg, "test_23_save_table_ok_1.db" );
+
+    log_test( "test_23_save_table_ok_1", b, true, "database saved", "cannot save database", error_msg );
+}
+
+void test_23_save_table_ok_2()
+{
+    auto * users = new anyvalue_db::Table;
+
+    init_table_3( users );
+
+    auto * orders = new anyvalue_db::Table;
+
+    init_order_table_3( orders );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    db.add_table( "users", users, & error_msg );
+    db.add_table( "orders", orders, & error_msg );
+
+    auto b = db.save( & error_msg, "test_23_save_table_ok_2.db" );
+
+    log_test( "test_23_save_table_ok_2", b, true, "database saved", "cannot save database", error_msg );
+}
+
+void test_24_load_table_ok_1()
+{
+    anyvalue_db::DB db;
+
+    auto b = db.init( "test_23_save_table_ok_2.db" );
+
+    log_test( "test_24_load_table_ok_1", b, true, "database loaded", "cannot load database", "" );
+}
+
+void test_25_load_table_find_table_ok_1()
+{
+    anyvalue_db::DB db;
+
+    db.init( "test_23_save_table_ok_2.db" );
+
+    auto t = db.find__unlocked( "users" );
+
+    log_test( "test_25_load_table_find_table_ok_1", t != nullptr, true, "table found", "cannot find table", "" );
+}
+
+void test_26_load_table_modify_save_ok_1()
+{
+    anyvalue_db::DB db;
+
+    db.init( "test_23_save_table_ok_2.db" );
+
+    std::string error_msg;
+
+    auto b = db.delete_table__unlocked( "users", & error_msg );
+
+    b &= db.save( & error_msg, "test_26_load_table_modify_save_ok_1.db" );
+
+    log_test( "test_26_load_table_modify_save_ok_1", b, true, "database saved", "cannot save database", error_msg );
+}
+
 int main( int argc, const char* argv[] )
 {
-    test_1();
-    test_1_nok();
+    test_1_add_record_ok_1();
+    test_1_add_record_nok_1();
     test_2();
     test_3_add();
     test_3_add_nok();
@@ -1154,6 +1328,16 @@ int main( int argc, const char* argv[] )
 
     test_20_add_table_ok_1();
     test_20_add_table_ok_2();
+    test_20_add_table_nok_1();
+    test_21_delete_table_ok_1();
+    test_21_delete_table_nok_1();
+    test_22_find_table_ok_1();
+    test_22_find_table_nok_1();
+    test_23_save_table_ok_1();
+    test_23_save_table_ok_2();
+    test_24_load_table_ok_1();
+    test_25_load_table_find_table_ok_1();
+    test_26_load_table_modify_save_ok_1();
 
     return 0;
 }

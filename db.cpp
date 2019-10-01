@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 12080 $ $Date:: 2019-09-30 #$ $Author: serge $
+// $Revision: 12098 $ $Date:: 2019-10-01 #$ $Author: serge $
 
 #include "db.h"                      // self
 
@@ -257,7 +257,7 @@ bool DB::load_intern( const std::string & filename )
         return false;
     }
 
-    dummy_log_info( MODULENAME, "load_intern: loaded %d entries from %s, number of keys %u, number of metakeys %u", map_name_to_table_.size(), filename.c_str(), map_name_to_table_.size(), map_metakey_id_to_value_.size() );
+    dummy_log_info( MODULENAME, "load_intern: loaded %d tables from %s, number of metakeys %u", map_name_to_table_.size(), filename.c_str(), map_metakey_id_to_value_.size() );
 
     return true;
 }
@@ -308,7 +308,7 @@ bool DB::save_intern( std::string * error_msg, const std::string & filename ) co
         return false;
     }
 
-    dummy_log_info( MODULENAME, "save: saved %d entries, %d metakeys into %s", map_name_to_table_.size(), map_metakey_id_to_value_.size(), filename.c_str() );
+    dummy_log_info( MODULENAME, "save: saved %d tables, %d metakeys into %s", map_name_to_table_.size(), map_metakey_id_to_value_.size(), filename.c_str() );
 
     return true;
 }
