@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11995 $ $Date:: 2019-09-16 #$ $Author: serge $
+// $Revision: 12074 $ $Date:: 2019-09-30 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -575,27 +575,15 @@ bool Table::load_intern( const std::string & filename )
 
     if( is.fail() )
     {
-        dummy_log_warn( MODULENAME, "load_intern: cannot open credentials file %s", filename.c_str() );
+        dummy_log_warn( MODULENAME, "load_intern: cannot open file %s", filename.c_str() );
         return false;
     }
 
-    Status status;
-
-    auto res = Serializer::load( is, & status );
+    auto res = Serializer::load( is, this );
 
     if( res == nullptr )
     {
-        dummy_log_error( MODULENAME, "load_intern: cannot load credentials" );
-        return false;
-    }
-
-    std::string error_msg;
-
-    auto b = init_from_status( & error_msg, status );
-
-    if( b == false )
-    {
-        dummy_log_error( MODULENAME, "load_intern: cannot init login map: %s", error_msg.c_str() );
+        dummy_log_error( MODULENAME, "load_intern: cannot load table" );
         return false;
     }
 
@@ -635,11 +623,7 @@ bool Table::save_intern( std::string * error_msg, const std::string & filename )
         return false;
     }
 
-    Status status;
-
-    get_status( & status );
-
-    auto res = Serializer::save( os, status );
+    auto res = Serializer::save( os, *this );
 
     if( res == false )
     {

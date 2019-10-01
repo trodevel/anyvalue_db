@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11960 $ $Date:: 2019-09-10 #$ $Author: serge $
+// $Revision: 12081 $ $Date:: 2019-09-30 #$ $Author: serge $
 
 #include "str_helper.h"             // self
 
@@ -62,6 +62,35 @@ std::ostream & StrHelper::write( std::ostream & os, const Table & l )
     }
 
     os << "metakeys:" << "\n";
+
+    for( auto e : l.map_metakey_id_to_value_ )
+    {
+        os << e.first << "=";
+
+        anyvalue::StrHelper::write( os, e.second );
+
+        os << "\n";
+    }
+
+    return os;
+}
+
+std::ostream & StrHelper::write( std::ostream & os, const DB & l )
+{
+    os << "tables:" << "\n";
+
+    for( auto e : l.map_name_to_table_ )
+    {
+        os << "\n"
+                << "table '" << e.first << "'\n"
+                << "\n";
+
+        write( os, * e.second );
+
+        os << "\n";
+    }
+
+    os << "DB metakeys:" << "\n";
 
     for( auto e : l.map_metakey_id_to_value_ )
     {

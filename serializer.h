@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11959 $ $Date:: 2019-09-10 #$ $Author: serge $
+// $Revision: 12075 $ $Date:: 2019-09-30 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__SERIALIZER_H
 #define ANYVALUE_DB__SERIALIZER_H
@@ -31,11 +31,15 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "serializer/versionable_loader_t.h"        // serializer::VersionableLoaderT
 #include "record.h"         // Record
 #include "status.h"         // Status
+#include "db_status.h"      // DBStatus
 
 namespace serializer
 {
 anyvalue_db::Record** load( std::istream & is, anyvalue_db::Record** e );
 bool save( std::ostream & os, const anyvalue_db::Record * e );
+
+anyvalue_db::Table** load( std::istream & is, anyvalue_db::Table** e );
+bool save( std::ostream & os, const anyvalue_db::Table * e );
 }
 
 namespace anyvalue_db
@@ -47,6 +51,7 @@ class Serializer: public serializer::VersionableLoaderT<Serializer>
 
 public:
     static Record* create_Record();
+    static Table* create_Table();
 
     static Record* load( std::istream & is, Record* e );
     static bool save( std::ostream & os, const Record & e );
@@ -60,11 +65,19 @@ public:
     static Status* load( std::istream & is, Status* e );
     static bool save( std::ostream & os, const Status & e );
 
+    static Table* load( std::istream & is, Table* e );
+    static bool save( std::ostream & os, const Table & e );
+
+    static DBStatus* load( std::istream & is, DBStatus* e );
+    static bool save( std::ostream & os, const DBStatus & e );
+
 private:
 
     static Record* load_1( std::istream & is, Record* e );
 
     static Status* load_1( std::istream & is, Status* e );
+    static Table* load_1( std::istream & is, Table* e );
+    static DBStatus* load_1( std::istream & is, DBStatus* e );
 };
 
 } // namespace anyvalue_db

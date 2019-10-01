@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "table.h"              // Table
+#include "db.h"                 // DB
 #include "str_helper.h"         // StrHelper
 #include "anyvalue/str_helper.h"        // anyvalue::StrHelper
 
@@ -21,6 +21,11 @@ const int STATUS        = 10;
 
 const int LAST_ID       = 777;
 const int CREATOR       = 888;
+
+
+// for order DB
+const int ORDER_ID      = 1;
+const int USER_ID       = 2;
 
 bool add_field_if_nonempty(
         anyvalue_db::Record     * record,
@@ -99,6 +104,18 @@ bool create_user_in_db(
     return true;
 }
 
+anyvalue_db::Record * create_order(
+             unsigned       order_id,
+             unsigned       user_id )
+{
+    auto res = new anyvalue_db::Record();
+
+    res->add_field( ORDER_ID,       int( order_id ) );
+    res->add_field( USER_ID,        int( user_id ) );
+
+    return res;
+}
+
 anyvalue_db::Record * create_record_1()
 {
     return create_record( 1111, "test", "xxx", "Doe", "John", "john.doe@yoyodyne.com", "+1234567890", "afafaf", 2 );
@@ -165,6 +182,40 @@ std::vector<anyvalue_db::Record*> init_table_3( anyvalue_db::Table * table )
     res.push_back( create_record_3() );
 
     table->init( std::vector<anyvalue_db::field_id_t>( { ID, LOGIN, REG_KEY } ));
+
+    std::string error_msg;
+
+    table->add_record( res[ 0 ], & error_msg );
+    table->add_record( res[ 1 ], & error_msg );
+    table->add_record( res[ 2 ], & error_msg );
+
+    return res;
+}
+
+anyvalue_db::Record * create_order_1()
+{
+    return create_order( 343434, 1111 );
+}
+
+anyvalue_db::Record * create_order_2()
+{
+    return create_order( 454545, 2222 );
+}
+
+anyvalue_db::Record * create_order_3()
+{
+    return create_order( 565656, 1111 );
+}
+
+std::vector<anyvalue_db::Record*> init_order_table_3( anyvalue_db::Table * table )
+{
+    std::vector<anyvalue_db::Record*> res;
+
+    res.push_back( create_order_1() );
+    res.push_back( create_order_2() );
+    res.push_back( create_order_3() );
+
+    table->init( std::vector<anyvalue_db::field_id_t>( { ORDER_ID } ));
 
     std::string error_msg;
 
@@ -817,7 +868,7 @@ void test_11_load_modify_save_ok_1()
         return;
     }
 
-    std::cout << "ORIG:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+    std::cout << "ORIG:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
     {
         auto & mutex = table.get_mutex();
@@ -841,7 +892,7 @@ void test_11_load_modify_save_ok_1()
         }
     }
 
-    std::cout << "NEW:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+    std::cout << "NEW:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
     std::string error_msg;
 
@@ -991,7 +1042,7 @@ void test_16_load_modify_save_ok_1()
         return;
     }
 
-    std::cout << "ORIG:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+    std::cout << "ORIG:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
     {
         auto & mutex = table.get_mutex();
@@ -1002,13 +1053,56 @@ void test_16_load_modify_save_ok_1()
         table.set_meta_key__unlocked( CREATOR, "Herr Müller" );
     }
 
-    std::cout << "NEW:" << anyvalue_db::StrHelper::to_string( table ) << "\n";
+    std::cout << "NEW:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
 
     std::string error_msg;
 
     b = table.save( & error_msg, "test_16.dat" );
 
     log_test( "test_16_load_modify_save_ok_1", b, true, "table was written", "cannot write file", error_msg );
+}
+
+void test_20_add_table_ok_1()
+{
+    auto * table = new anyvalue_db::Table;
+
+    init_table_3( table );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    auto b = db.add_table( "users", table, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( db ) << "\n";
+
+    log_test( "test_20_add_table_ok_1", b, true, "table added", "cannot add table", error_msg );
+}
+
+void test_20_add_table_ok_2()
+{
+    auto * table = new anyvalue_db::Table;
+
+    init_table_3( table );
+
+    auto * orders = new anyvalue_db::Table;
+
+    init_order_table_3( orders );
+
+    anyvalue_db::DB db;
+
+    db.init();
+
+    std::string error_msg;
+
+    auto b = db.add_table( "users", table, & error_msg );
+    b &= db.add_table( "orders", orders, & error_msg );
+
+    std::cout << anyvalue_db::StrHelper::to_string( db ) << "\n";
+
+    log_test( "test_20_add_table_ok_2", b, true, "table added", "cannot add table", error_msg );
 }
 
 int main( int argc, const char* argv[] )
@@ -1057,6 +1151,9 @@ int main( int argc, const char* argv[] )
     test_14_delete_metakey_nok_1();
     test_15_save_ok_1();
     test_16_load_modify_save_ok_1();
+
+    test_20_add_table_ok_1();
+    test_20_add_table_ok_2();
 
     return 0;
 }

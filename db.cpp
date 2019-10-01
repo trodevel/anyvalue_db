@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 12071 $ $Date:: 2019-09-27 #$ $Author: serge $
+// $Revision: 12080 $ $Date:: 2019-09-30 #$ $Author: serge $
 
 #include "db.h"                      // self
 
@@ -49,7 +49,7 @@ DB::~DB()
 {
     for( auto e: map_name_to_table_ )
     {
-        delete e;
+        delete e.second;
     }
 }
 
@@ -74,12 +74,9 @@ bool DB::init()
 
     assert( is_inited_ == false );
 
-    auto b = init_index( keys );
+    is_inited_  = true;
 
-    if( b )
-        is_inited_  = true;
-
-    return b;
+    return true;
 }
 
 bool DB::add_table(
@@ -318,7 +315,7 @@ bool DB::save_intern( std::string * error_msg, const std::string & filename ) co
 
 void DB::get_status( DBStatus * res ) const
 {
-    res->map_name_to_table = map_name_to_table_
+    res->map_name_to_table = map_name_to_table_;
 
     for( auto & e : map_metakey_id_to_value_ )
     {

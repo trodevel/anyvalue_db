@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11959 $ $Date:: 2019-09-10 #$ $Author: serge $
+// $Revision: 12075 $ $Date:: 2019-09-30 #$ $Author: serge $
 
 #include "serializer.h"     // self
 
@@ -69,6 +69,42 @@ bool save( std::ostream & os, const anyvalue_db::Record * e )
     return anyvalue_db::Serializer::save( os, * e );
 }
 
+anyvalue_db::Table* load( std::istream & is, anyvalue_db::Table* e )
+{
+    if( e != nullptr )
+        throw std::invalid_argument( "Serializer::load: e must be null" );
+
+    auto el = anyvalue_db::Serializer::create_Table();
+
+    auto res = anyvalue_db::Serializer::load( is, static_cast< anyvalue_db::Table *>( el ) );
+
+    if( res == nullptr )
+    {
+        delete el;
+        return nullptr;
+    }
+
+    return el;
+}
+
+anyvalue_db::Table** load( std::istream & is, anyvalue_db::Table** e )
+{
+    auto res = load( is, static_cast< anyvalue_db::Table *>( nullptr ) );
+
+    if( res == nullptr )
+    {
+        return nullptr;
+    }
+
+    *e =  res;
+
+    return e;
+}
+
+bool save( std::ostream & os, const anyvalue_db::Table * e )
+{
+    return anyvalue_db::Serializer::save( os, * e );
+}
 }
 
 namespace anyvalue_db
@@ -77,6 +113,11 @@ namespace anyvalue_db
 Record* Serializer::create_Record()
 {
     return new Record();
+}
+
+Table* Serializer::create_Table()
+{
+    return new Table();
 }
 
 Record* Serializer::load_1( std::istream & is, Record* res )
@@ -175,6 +216,86 @@ bool Serializer::save( std::ostream & os, const Status & e )
     b &= serializer::save( os, e.index_field_ids );
 
     b &= serializer::save<true>( os, e.records );
+
+    b &= serializer::save<true>( os, e.metakeys );
+
+    return b;
+}
+
+Table* Serializer::load_1( std::istream & is, Table* res )
+{
+    if( res == nullptr )
+        throw std::invalid_argument( "Serializer::load: res must not be null" );
+
+    Status status;
+
+    if( load( is, & status ) == nullptr )
+        return nullptr;
+
+    std::string error_msg;
+
+    auto b = res->init_from_status( & error_msg, status );
+
+    if( b == false )
+    {
+        //dummy_log_error( MODULENAME, "load_intern: cannot init login map: %s", error_msg.c_str() );
+        return nullptr;
+    }
+
+    return res;
+}
+
+Table* Serializer::load( std::istream & is, Table* e )
+{
+    return load_t_1( is, e );
+}
+
+bool Serializer::save( std::ostream & os, const Table & e )
+{
+    static const unsigned int VERSION = 1;
+
+    auto b = serializer::save( os, VERSION );
+
+    if( b == false )
+        return false;
+
+    Status status;
+
+    e.get_status( & status );
+
+    b &= save( os, status );
+
+    return b;
+}
+
+DBStatus* Serializer::load_1( std::istream & is, DBStatus* res )
+{
+    if( res == nullptr )
+        throw std::invalid_argument( "Serializer::load: res must not be null" );
+
+    if( serializer::load( is, & res->map_name_to_table ) == nullptr )
+        return nullptr;
+    if( serializer::load( is, & res->metakeys ) == nullptr )
+        return nullptr;
+
+    return res;
+}
+
+DBStatus* Serializer::load( std::istream & is, DBStatus* e )
+{
+    return load_t_1( is, e );
+}
+
+bool Serializer::save( std::ostream & os, const DBStatus & e )
+{
+    static const unsigned int VERSION = 1;
+
+    auto b = serializer::save( os, VERSION );
+
+    if( b == false )
+        return false;
+
+    b &= serializer::save<true>( os, e.map_name_to_table );
 
     b &= serializer::save<true>( os, e.metakeys );
 
