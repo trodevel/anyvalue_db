@@ -833,25 +833,61 @@ void test_10_load_ok_1()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "test_9_empty.dat" );
+    auto b = false;
+    std::string error_msg;
 
-    log_test( "test_10_load_ok_1", b, true, "table was loaded", "cannot load table", "" );
+    try
+    {
+        table.init( "test_9_empty.dat" );
+
+        b = true;
+    }
+    catch( std::exception & e )
+    {
+        error_msg = e.what();
+    }
+
+    log_test( "test_10_load_ok_1", b, true, "table was loaded", error_msg, "" );
 }
 
 void test_10_load_ok_2()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "test_9.dat" );
+    auto b = false;
+    std::string error_msg;
 
-    log_test( "test_10_load_ok_2", b, true, "table was loaded", "cannot load table", "" );
+    try
+    {
+        table.init( "test_9.dat" );
+
+        b = true;
+    }
+    catch( std::exception & e )
+    {
+        error_msg = e.what();
+    }
+
+    log_test( "test_10_load_ok_2", b, true, "table was loaded", error_msg, "" );
 }
 
 void test_10_load_nok_3()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "blabla.dat" );
+    auto b = false;
+    std::string error_msg;
+
+    try
+    {
+        table.init( "blabla.dat" );
+
+        b = true;
+    }
+    catch( std::exception & e )
+    {
+        error_msg = e.what();
+    }
 
     log_test( "test_10_load_nok_3", b, false, "non-existing table was not loaded", "unexpectedly load non-existing table", "" );
 }
@@ -860,11 +896,23 @@ void test_11_load_modify_save_ok_1()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "test_9.dat" );
+    auto b = false;
+    std::string error_msg;
+
+    try
+    {
+        table.init( "test_9.dat" );
+
+        b = true;
+    }
+    catch( std::exception & e )
+    {
+        error_msg = e.what();
+    }
 
     if( b == false )
     {
-        log_test( "test_11_load_modify_save_ok_1", b, true, "table was loaded", "cannot load table", "" );
+        log_test( "test_11_load_modify_save_ok_1", b, true, "table was loaded", error_msg, "" );
         return;
     }
 
@@ -893,8 +941,6 @@ void test_11_load_modify_save_ok_1()
     }
 
     std::cout << "NEW:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
-
-    std::string error_msg;
 
     b = table.save( & error_msg, "test_11.dat" );
 
@@ -1034,11 +1080,23 @@ void test_16_load_modify_save_ok_1()
 {
     anyvalue_db::Table table;
 
-    auto b = table.init( "test_15.dat" );
+    auto b = false;
+    std::string error_msg;
+
+    try
+    {
+        table.init( "test_15.dat" );
+
+        b = true;
+    }
+    catch( std::exception & e )
+    {
+        error_msg = e.what();
+    }
 
     if( b == false )
     {
-        log_test( "test_16_load_modify_save_ok_1", b, true, "table was loaded", "cannot load table", "" );
+        log_test( "test_16_load_modify_save_ok_1", b, true, "table was loaded", error_msg, "" );
         return;
     }
 
@@ -1054,8 +1112,6 @@ void test_16_load_modify_save_ok_1()
     }
 
     std::cout << "NEW:" << "\n" << anyvalue_db::StrHelper::to_string( table ) << "\n";
-
-    std::string error_msg;
 
     b = table.save( & error_msg, "test_16.dat" );
 
