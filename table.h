@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 11973 $ $Date:: 2019-09-10 #$ $Author: serge $
+// $Revision: 13882 $ $Date:: 2020-09-27 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -67,10 +67,10 @@ public:
     Table();
     ~Table();
 
-    bool init(
+    void init(
             const std::string & filename );
 
-    bool init(
+    void init(
             const std::vector<field_id_t> & keys );
 
     bool add_record(

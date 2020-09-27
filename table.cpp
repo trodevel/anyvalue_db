@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 12098 $ $Date:: 2019-10-01 #$ $Author: serge $
+// $Revision: 13882 $ $Date:: 2020-09-27 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -53,7 +53,7 @@ Table::~Table()
     }
 }
 
-bool Table::init(
+void Table::init(
         const std::string   & filename )
 {
     MUTEX_SCOPE_LOCK( mutex_ );
@@ -62,13 +62,15 @@ bool Table::init(
 
     auto b = load_intern( filename );
 
-    if( b )
-        is_inited_  = true;
+    if( ! b )
+    {
+        throw std::runtime_error( "Table::init: cannot load " + filename );
+    }
 
-    return b;
+    is_inited_  = true;
 }
 
-bool Table::init(
+void Table::init(
         const std::vector<field_id_t> & keys )
 {
     MUTEX_SCOPE_LOCK( mutex_ );
@@ -77,10 +79,12 @@ bool Table::init(
 
     auto b = init_index( keys );
 
-    if( b )
-        is_inited_  = true;
+    if( !b )
+    {
+        throw std::runtime_error( "Table::init: cannot init index keys" );
+    }
 
-    return b;
+    is_inited_  = true;
 }
 
 bool Table::add_record(
