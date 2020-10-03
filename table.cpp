@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 13882 $ $Date:: 2020-09-27 #$ $Author: serge $
+// $Revision: 13915 $ $Date:: 2020-10-02 #$ $Author: serge $
 
 #include "table.h"                      // self
 
@@ -85,6 +85,13 @@ void Table::init(
     }
 
     is_inited_  = true;
+}
+
+std::size_t Table::get_size() const
+{
+    MUTEX_SCOPE_LOCK( mutex_ );
+
+    return records_.size();
 }
 
 bool Table::add_record(

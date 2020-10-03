@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 13882 $ $Date:: 2020-09-27 #$ $Author: serge $
+// $Revision: 13915 $ $Date:: 2020-10-02 #$ $Author: serge $
 
 #ifndef ANYVALUE_DB__TABLE_H
 #define ANYVALUE_DB__TABLE_H
@@ -72,6 +72,8 @@ public:
 
     void init(
             const std::vector<field_id_t> & keys );
+
+    std::size_t get_size() const;
 
     bool add_record(
             Record              * record,
